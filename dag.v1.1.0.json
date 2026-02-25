@@ -1,0 +1,682 @@
+{
+  "version": "v1.1.0",
+  "project": "Trust-Lean",
+  "phases": [
+    {
+      "id": "fase1",
+      "name": "Fase 1: Core IR + Semántica",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N1.1",
+          "name": "Value + LowLevelExpr",
+          "type": "FUNDACIONAL",
+          "status": "completed",
+          "files": [
+            "TrustLean/Core/Value.lean"
+          ],
+          "deps": [],
+          "blocks": [
+            "N1.2"
+          ],
+          "metrics": {
+            "loc": 231,
+            "theorems": 34,
+            "lemmas": 0,
+            "defs": 7,
+            "sorry": 0
+          }
+        },
+        {
+          "id": "N1.2",
+          "name": "Stmt IR (12 constructors)",
+          "type": "FUNDACIONAL",
+          "status": "completed",
+          "files": [
+            "TrustLean/Core/Stmt.lean"
+          ],
+          "deps": [
+            "N1.1"
+          ],
+          "blocks": [
+            "N1.3"
+          ],
+          "metrics": {
+            "loc": 157,
+            "theorems": 14,
+            "lemmas": 0,
+            "defs": 7,
+            "sorry": 0
+          }
+        },
+        {
+          "id": "N1.3",
+          "name": "Evaluator (fuel-based)",
+          "type": "CRITICO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Core/Eval.lean"
+          ],
+          "deps": [
+            "N1.1",
+            "N1.2"
+          ],
+          "blocks": [
+            "N1.4"
+          ],
+          "metrics": {
+            "loc": 266,
+            "theorems": 21,
+            "lemmas": 0,
+            "defs": 3,
+            "sorry": 0
+          }
+        },
+        {
+          "id": "N1.4",
+          "name": "Foundation Lemmas",
+          "type": "CRITICO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Core/Foundation.lean"
+          ],
+          "deps": [
+            "N1.3"
+          ],
+          "blocks": [
+            "N1.5"
+          ],
+          "metrics": {
+            "loc": 234,
+            "theorems": 30,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          }
+        },
+        {
+          "id": "N1.5",
+          "name": "evalStmt_fuel_mono (GATE)",
+          "type": "CRITICO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Core/FuelMono.lean"
+          ],
+          "deps": [
+            "N1.4"
+          ],
+          "blocks": [
+            "N2.1"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B1",
+          "name": "Bloque 1: Value Foundation",
+          "nodes": [
+            "N1.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-20"
+        },
+        {
+          "id": "B2",
+          "name": "Bloque 2: Stmt IR",
+          "nodes": [
+            "N1.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-20"
+        },
+        {
+          "id": "B3",
+          "name": "Bloque 3: Evaluator",
+          "nodes": [
+            "N1.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-20"
+        },
+        {
+          "id": "B4",
+          "name": "Bloque 4: Foundation Lemmas",
+          "nodes": [
+            "N1.4"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-20"
+        },
+        {
+          "id": "B5",
+          "name": "Bloque 5: FuelMono Gate",
+          "nodes": [
+            "N1.5"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-20"
+        }
+      ]
+    },
+    {
+      "id": "fase2",
+      "name": "Fase 2: Typeclasses + ArithExpr Frontend",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N2.1",
+          "name": "Typeclass Infrastructure",
+          "type": "CRITICO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Typeclass/CodeGenerable.lean",
+            "TrustLean/Typeclass/CodeGenSound.lean"
+          ],
+          "deps": [
+            "N1.5"
+          ],
+          "blocks": [
+            "N2.2"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          }
+        },
+        {
+          "id": "N2.2",
+          "name": "ArithExpr Frontend (GATE)",
+          "type": "CRITICO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Frontend/ArithExpr/Syntax.lean",
+            "TrustLean/Frontend/ArithExpr/Compile.lean",
+            "TrustLean/Frontend/ArithExpr/Correctness.lean"
+          ],
+          "deps": [
+            "N2.1"
+          ],
+          "blocks": [
+            "N3.1",
+            "N3.2",
+            "N4.1"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B6",
+          "name": "Bloque 6: Typeclasses",
+          "nodes": [
+            "N2.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-20"
+        },
+        {
+          "id": "B7",
+          "name": "Bloque 7: ArithExpr Gate",
+          "nodes": [
+            "N2.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-20"
+        }
+      ]
+    },
+    {
+      "id": "fase3",
+      "name": "Fase 3: Extended Frontends",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N3.1",
+          "name": "BoolExpr Frontend",
+          "type": "PARALELO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Frontend/BoolExpr/Syntax.lean",
+            "TrustLean/Frontend/BoolExpr/Compile.lean",
+            "TrustLean/Frontend/BoolExpr/Correctness.lean"
+          ],
+          "deps": [
+            "N2.2"
+          ],
+          "blocks": [
+            "N5.1"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          }
+        },
+        {
+          "id": "N3.2",
+          "name": "ImpStmt Frontend",
+          "type": "CRITICO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Frontend/ImpStmt/Syntax.lean",
+            "TrustLean/Frontend/ImpStmt/Compile.lean",
+            "TrustLean/Frontend/ImpStmt/Correctness.lean"
+          ],
+          "deps": [
+            "N2.2"
+          ],
+          "blocks": [
+            "N5.1"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B8",
+          "name": "Bloque 8: BoolExpr",
+          "nodes": [
+            "N3.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-20"
+        },
+        {
+          "id": "B9",
+          "name": "Bloque 9: ImpStmt",
+          "nodes": [
+            "N3.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        }
+      ]
+    },
+    {
+      "id": "fase4",
+      "name": "Fase 4: Backends",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N4.1",
+          "name": "Common + C Backend",
+          "type": "PARALELO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Backend/Common.lean",
+            "TrustLean/Backend/CBackend.lean"
+          ],
+          "deps": [
+            "N2.2"
+          ],
+          "blocks": [
+            "N4.2"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          }
+        },
+        {
+          "id": "N4.2",
+          "name": "Rust Backend",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [
+            "TrustLean/Backend/RustBackend.lean"
+          ],
+          "deps": [
+            "N4.1"
+          ],
+          "blocks": [
+            "N5.1"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B10",
+          "name": "Bloque 10: C Backend",
+          "nodes": [
+            "N4.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        },
+        {
+          "id": "B11",
+          "name": "Bloque 11: Rust Backend",
+          "nodes": [
+            "N4.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        }
+      ]
+    },
+    {
+      "id": "fase5",
+      "name": "Fase 5: Integration + Consolidation",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N5.1",
+          "name": "Pipeline + Integration Tests",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [
+            "TrustLean/Pipeline.lean",
+            "TrustLean/Tests/Integration.lean"
+          ],
+          "deps": [
+            "N3.1",
+            "N3.2",
+            "N4.2"
+          ],
+          "blocks": [
+            "N5.2"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          }
+        },
+        {
+          "id": "N5.2",
+          "name": "Zero Sorry Audit",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [],
+          "deps": [
+            "N5.1"
+          ],
+          "blocks": [],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B12",
+          "name": "Bloque 12: Pipeline",
+          "nodes": [
+            "N5.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        },
+        {
+          "id": "B13",
+          "name": "Bloque 13: Zero Sorry Audit",
+          "nodes": [
+            "N5.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        }
+      ]
+    },
+    {
+      "id": "fase6",
+      "name": "Fase 6: Bridge Foundation",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N6.1",
+          "name": "Bridge Types + Semantics",
+          "type": "FUNDACIONAL",
+          "status": "completed",
+          "files": [
+            "TrustLean/Bridge/Types.lean",
+            "TrustLean/Bridge/Semantics.lean",
+            "TrustLean/Bridge.lean"
+          ],
+          "deps": [
+            "N1.5"
+          ],
+          "blocks": [
+            "N6.2"
+          ],
+          "metrics": {
+            "loc": 477,
+            "theorems": 14,
+            "lemmas": 0,
+            "defs": 15,
+            "sorry": 0
+          }
+        },
+        {
+          "id": "N6.2",
+          "name": "Expression Translation + Proofs (GATE)",
+          "type": "CRITICO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Bridge/ExprTranslation.lean"
+          ],
+          "deps": [
+            "N6.1"
+          ],
+          "blocks": [
+            "N7.1",
+            "N7.2"
+          ],
+          "metrics": {}
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B14",
+          "name": "Bloque 14: Bridge Types + Semantics",
+          "nodes": [
+            "N6.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        },
+        {
+          "id": "B15",
+          "name": "Bloque 15: Expression Translation Gate",
+          "nodes": [
+            "N6.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        }
+      ]
+    },
+    {
+      "id": "fase7",
+      "name": "Fase 7: Statement Translation",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N7.1",
+          "name": "Scalar Statement Translation + Proofs",
+          "type": "PARALELO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Bridge/ScalarTranslation.lean"
+          ],
+          "deps": [
+            "N6.2"
+          ],
+          "blocks": [
+            "N7.3"
+          ],
+          "metrics": {}
+        },
+        {
+          "id": "N7.2",
+          "name": "Memory Translation + Proofs",
+          "type": "PARALELO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Bridge/MemoryTranslation.lean"
+          ],
+          "deps": [
+            "N6.2"
+          ],
+          "blocks": [
+            "N7.3"
+          ],
+          "metrics": {}
+        },
+        {
+          "id": "N7.3",
+          "name": "Main Bridge Function (Compile)",
+          "type": "CRITICO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Bridge/Compile.lean"
+          ],
+          "deps": [
+            "N7.1",
+            "N7.2"
+          ],
+          "blocks": [
+            "N8.1"
+          ],
+          "metrics": {}
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B16",
+          "name": "Bloque 16: Scalar + Memory Translation (AGENT_TEAM)",
+          "nodes": [
+            "N7.1",
+            "N7.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        },
+        {
+          "id": "B17",
+          "name": "Bloque 17: Main Bridge",
+          "nodes": [
+            "N7.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        }
+      ]
+    },
+    {
+      "id": "fase8",
+      "name": "Fase 8: Correctness + Integration",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N8.1",
+          "name": "Bridge Correctness Proof",
+          "type": "CRITICO",
+          "status": "completed",
+          "files": [
+            "TrustLean/Bridge/Correctness.lean"
+          ],
+          "deps": [
+            "N7.3"
+          ],
+          "blocks": [
+            "N8.2"
+          ],
+          "metrics": {
+            "loc": 490,
+            "theorems": 16,
+            "lemmas": 0,
+            "defs": 2,
+            "sorry": 0
+          }
+        },
+        {
+          "id": "N8.2",
+          "name": "Integration Tests + Zero Sorry",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [
+            "TrustLean/Bridge/Tests.lean"
+          ],
+          "deps": [
+            "N8.1"
+          ],
+          "blocks": [],
+          "metrics": {
+            "loc": 227,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 8,
+            "sorry": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B18",
+          "name": "Bloque 18: Correctness Proof",
+          "nodes": [
+            "N8.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        },
+        {
+          "id": "B19",
+          "name": "Bloque 19: Integration + Zero Sorry",
+          "nodes": [
+            "N8.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-02-21"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "created": "2026-02-20T19:23:56Z",
+    "updated": "2026-02-21T13:23:28Z",
+    "total_nodes": 20,
+    "completed_nodes": 20
+  }
+}

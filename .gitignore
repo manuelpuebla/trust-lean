@@ -1,0 +1,26 @@
+# Lake build artifacts
+.lake/
+lake-packages/
+
+# OS files
+.DS_Store
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Credentials / secrets
+*.env
+*.pem
+*.key
+
+# Intermediate research docs (large, regenerable)
+EXPERT_KNOWLEDGE_INDEX.md
+EXPERT_KNOWLEDGE_SYNTHESIS.md
+EXPERT_RECOMMENDATIONS.md
+FUEL_MONO_PROOF_STRATEGY.md
+KNOWLEDGE_SYNTHESIS_SUMMARY.txt
+
+# Claude Code config
+CLAUDE.md

@@ -1,0 +1,2442 @@
+{
+  "N2.1": {
+    "node": "N2.1",
+    "properties": null,
+    "integration": null,
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": [],
+    "warning": "No test files found for node N2.1"
+  },
+  "_meta": {
+    "saved_at": "2026-02-21T23:57:34.616007+00:00",
+    "project": "/Users/manuelpuebla/Documents/claudio/Trust-Lean"
+  },
+  "N2.1 ArithExpr Frontend": {
+    "node": "N2.1 ArithExpr Frontend",
+    "properties": {
+      "file": "Tests/Properties/ArithExprFrontend.lean",
+      "total": 12,
+      "passing": 12,
+      "failing": 0,
+      "not_runnable": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "compile_correct theorem exists and is proven (0 sorry).",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 21
+        },
+        {
+          "name": "compile_correct theorem exists and is proven (0 sorry).",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 24
+        },
+        {
+          "name": "compile_correct theorem exists and is proven (0 sorry).",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 27
+        },
+        {
+          "name": "eval is a pure function, same input gives same output.",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 33
+        },
+        {
+          "name": "compile is a pure function.",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 39
+        },
+        {
+          "name": "ArithExpr.eval (lit n) ctx = n for any ctx.",
+          "priority": "P1",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 45
+        },
+        {
+          "name": "ArithExpr.eval (lit n) ctx = n for any ctx.",
+          "priority": "P1",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 49
+        },
+        {
+          "name": "ArithExpr.eval (lit n) ctx = n for any ctx.",
+          "priority": "P1",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 50
+        },
+        {
+          "name": "ArithExpr.eval (lit n) ctx = n for any ctx.",
+          "priority": "P1",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 51
+        },
+        {
+          "name": "compile_mono is proven for all ArithExpr.",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 57
+        },
+        {
+          "name": "compile_mono is proven for all ArithExpr.",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 58
+        },
+        {
+          "name": "compile_mono is proven for all ArithExpr.",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 60
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/ArithExprFrontend.lean",
+      "total": 0,
+      "passing": 0,
+      "failing": 0,
+      "errors": 0,
+      "details": []
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N2.2 BoolExpr Frontend": {
+    "node": "N2.2 BoolExpr Frontend",
+    "properties": {
+      "file": "Tests/Properties/BoolExprFrontend.lean",
+      "total": 15,
+      "passing": 15,
+      "failing": 0,
+      "not_runnable": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "compile_correct theorem exists with 0 sorry.",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 21
+        },
+        {
+          "name": "compile_correct theorem exists with 0 sorry.",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 22
+        },
+        {
+          "name": "compile_correct theorem exists with 0 sorry.",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 25
+        },
+        {
+          "name": "compile_correct theorem exists with 0 sorry.",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 28
+        },
+        {
+          "name": "compile_correct theorem exists with 0 sorry.",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 31
+        },
+        {
+          "name": "compile_correct theorem exists with 0 sorry.",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 34
+        },
+        {
+          "name": "eval on lit doesn't depend on env at all.",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 39
+        },
+        {
+          "name": "eval on lit doesn't depend on env at all.",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 42
+        },
+        {
+          "name": "eval on lit doesn't depend on env at all.",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 46
+        },
+        {
+          "name": "not (not e) = e for all BoolExpr and env.",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 53
+        },
+        {
+          "name": "not (not e) = e for all BoolExpr and env.",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 58
+        },
+        {
+          "name": "not (not e) = e for all BoolExpr and env.",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 59
+        },
+        {
+          "name": "not (not e) = e for all BoolExpr and env.",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 60
+        },
+        {
+          "name": "not (not e) = e for all BoolExpr and env.",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 65
+        },
+        {
+          "name": "not (not e) = e for all BoolExpr and env.",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 72
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/BoolExprFrontend.lean",
+      "total": 0,
+      "passing": 0,
+      "failing": 0,
+      "errors": 0,
+      "details": []
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N2.3 ImpStmt Frontend": {
+    "node": "N2.3 ImpStmt Frontend",
+    "properties": {
+      "file": "Tests/Properties/ImpStmtFrontend.lean",
+      "total": 13,
+      "passing": 13,
+      "failing": 0,
+      "not_runnable": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "add is compositionally correct",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 18
+        },
+        {
+          "name": "mul is compositionally correct",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 22
+        },
+        {
+          "name": "mul is compositionally correct",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 26
+        },
+        {
+          "name": "mul is compositionally correct",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 29
+        },
+        {
+          "name": "and_ is compositionally correct",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 34
+        },
+        {
+          "name": "or_ is compositionally correct",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 38
+        },
+        {
+          "name": "not_ is compositionally correct",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 42
+        },
+        {
+          "name": "not_ is compositionally correct",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 46
+        },
+        {
+          "name": "not_ is compositionally correct",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 49
+        },
+        {
+          "name": "not_ is compositionally correct",
+          "priority": "P0",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 52
+        },
+        {
+          "name": "skip does not alter the environment",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 64
+        },
+        {
+          "name": "skip does not alter the environment",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 68
+        },
+        {
+          "name": "eval is a pure function",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 86
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/ImpStmtFrontend.lean",
+      "total": 0,
+      "passing": 0,
+      "failing": 0,
+      "errors": 0,
+      "details": []
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N3.1": {
+    "node": "N3.1",
+    "properties": null,
+    "integration": null,
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": [],
+    "warning": "No test files found for node N3.1"
+  },
+  "N3.1 Bridge ExpandedSigma": {
+    "node": "N3.1 Bridge ExpandedSigma",
+    "properties": {
+      "file": "Tests/Properties/BridgeExpandedSigma.lean",
+      "total": 15,
+      "passing": 15,
+      "failing": 0,
+      "not_runnable": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 140
+        },
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 141
+        },
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 142
+        },
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 145
+        },
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 146
+        },
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 147
+        },
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 150
+        },
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 151
+        },
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 152
+        },
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 155
+        },
+        {
+          "name": "scalarVarToVarName is injective",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 156
+        },
+        {
+          "name": "structural homomorphism for arithmetic operations",
+          "priority": "P1",
+          "type": "PRESERVATION",
+          "status": "PASS",
+          "line": 171
+        },
+        {
+          "name": "structural homomorphism for arithmetic operations",
+          "priority": "P1",
+          "type": "PRESERVATION",
+          "status": "PASS",
+          "line": 175
+        },
+        {
+          "name": "structural homomorphism for arithmetic operations",
+          "priority": "P1",
+          "type": "PRESERVATION",
+          "status": "PASS",
+          "line": 179
+        },
+        {
+          "name": "structural homomorphism for arithmetic operations",
+          "priority": "P1",
+          "type": "PRESERVATION",
+          "status": "PASS",
+          "line": 183
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/BridgeExpandedSigma.lean",
+      "total": 0,
+      "passing": 0,
+      "failing": 0,
+      "errors": 0,
+      "details": []
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N3.2 Pipeline RustBackend": {
+    "node": "N3.2 Pipeline RustBackend",
+    "properties": {
+      "file": "Tests/Properties/PipelineRustBackend.lean",
+      "total": 3,
+      "passing": 3,
+      "failing": 0,
+      "not_runnable": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "-a: determinism for a non-trivial statement",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 113
+        },
+        {
+          "name": "-b: determinism with different levels",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 117
+        },
+        {
+          "name": "-c: determinism for seq",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 121
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/PipelineRustBackend.lean",
+      "total": 0,
+      "passing": 0,
+      "failing": 0,
+      "errors": 0,
+      "details": []
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N9.1 Sanitizacion Helpers": {
+    "node": "N9.1 Sanitizacion Helpers",
+    "properties": {
+      "file": "Tests/Properties/SanitizacionHelpers.lean",
+      "total": 35,
+      "passing": 34,
+      "failing": 0,
+      "not_runnable": 1,
+      "errors": 0,
+      "details": [
+        {
+          "name": "prop_L20",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "NOT_RUNNABLE",
+          "line": 20
+        },
+        {
+          "name": "prop_L21",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 21
+        },
+        {
+          "name": "prop_L22",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 22
+        },
+        {
+          "name": "prop_L23",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 23
+        },
+        {
+          "name": "prop_L24",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 24
+        },
+        {
+          "name": "prop_L25",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 25
+        },
+        {
+          "name": "prop_L26",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 26
+        },
+        {
+          "name": "prop_L27",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 27
+        },
+        {
+          "name": "prop_L28",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 28
+        },
+        {
+          "name": "prop_L29",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 29
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 50
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 51
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 52
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 53
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 54
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 55
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 73
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 74
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 75
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 76
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 77
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 78
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 108
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 109
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 110
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 111
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 112
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 130
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 131
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 132
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 133
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 134
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 138
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 139
+        },
+        {
+          "name": "idempotency on wider set via #eval",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 140
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/SanitizacionHelpers.lean",
+      "total": 12,
+      "passing": 12,
+      "failing": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "T1_basic_valid",
+          "status": "PASS"
+        },
+        {
+          "name": "T2_keyword",
+          "status": "PASS"
+        },
+        {
+          "name": "T3_starts_with_digit",
+          "status": "PASS"
+        },
+        {
+          "name": "T4_invalid_chars",
+          "status": "PASS"
+        },
+        {
+          "name": "T5_strip_to_keyword",
+          "status": "PASS"
+        },
+        {
+          "name": "T6_empty",
+          "status": "PASS"
+        },
+        {
+          "name": "T7_strip_to_empty",
+          "status": "PASS"
+        },
+        {
+          "name": "T8_indent",
+          "status": "PASS"
+        },
+        {
+          "name": "T9_joinCode",
+          "status": "PASS"
+        },
+        {
+          "name": "T10_joinCode_empty",
+          "status": "PASS"
+        },
+        {
+          "name": "T11_joinCode_single",
+          "status": "PASS"
+        },
+        {
+          "name": "T12_formatArrayAccess",
+          "status": "PASS"
+        }
+      ]
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N9.2 CBackend Refactor": {
+    "node": "N9.2 CBackend Refactor",
+    "properties": {
+      "file": "Tests/Properties/CBackendRefactor.lean",
+      "total": 30,
+      "passing": 29,
+      "failing": 0,
+      "not_runnable": 1,
+      "errors": 0,
+      "details": [
+        {
+          "name": "prop_L25",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "NOT_RUNNABLE",
+          "line": 25
+        },
+        {
+          "name": "prop_L26",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 26
+        },
+        {
+          "name": "prop_L27",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 27
+        },
+        {
+          "name": "prop_L28",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 28
+        },
+        {
+          "name": "prop_L31",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 31
+        },
+        {
+          "name": "prop_L32",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 32
+        },
+        {
+          "name": "prop_L35",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 35
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 39
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 40
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 41
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 59
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 60
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 61
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 62
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 63
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 80
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 81
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 82
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 103
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 104
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 105
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 106
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 107
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 109
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 111
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 115
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 151
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 152
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 155
+        },
+        {
+          "name": "INVARIANT: sanitizeIdentifier_not_keyword is formally proved.",
+          "priority": "P0",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 156
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/CBackendRefactor.lean",
+      "total": 12,
+      "passing": 12,
+      "failing": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "T1_assignment",
+          "status": "PASS"
+        },
+        {
+          "name": "T2_ite",
+          "status": "PASS"
+        },
+        {
+          "name": "T3_for_loop",
+          "status": "PASS"
+        },
+        {
+          "name": "T4_operators",
+          "status": "PASS"
+        },
+        {
+          "name": "T5_store_load",
+          "status": "PASS"
+        },
+        {
+          "name": "T6_keyword_sanitization",
+          "status": "PASS"
+        },
+        {
+          "name": "T7_invalid_char_sanitization",
+          "status": "PASS"
+        },
+        {
+          "name": "T8_empty_bodies",
+          "status": "PASS"
+        },
+        {
+          "name": "T9_empty_function",
+          "status": "PASS"
+        },
+        {
+          "name": "T10_full_function_and_header",
+          "status": "PASS"
+        },
+        {
+          "name": "T11_gcc_structural",
+          "status": "PASS"
+        },
+        {
+          "name": "T12_precedence",
+          "status": "PASS"
+        }
+      ]
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N1.1": {
+    "node": "N1.1",
+    "properties": null,
+    "integration": null,
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": [],
+    "warning": "No test files found for node N1.1"
+  },
+  "N9.3 Propiedades CBackend": {
+    "node": "N9.3 Propiedades CBackend",
+    "properties": {
+      "file": "Tests/Properties/PropiedadesCBackend.lean",
+      "total": 27,
+      "passing": 27,
+      "failing": 0,
+      "not_runnable": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "prop_L19",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 19
+        },
+        {
+          "name": "prop_L20",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 20
+        },
+        {
+          "name": "prop_L21",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 21
+        },
+        {
+          "name": "prop_L22",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 22
+        },
+        {
+          "name": "prop_L23",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 23
+        },
+        {
+          "name": "prop_L25",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 25
+        },
+        {
+          "name": "prop_L27",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 27
+        },
+        {
+          "name": "prop_L29",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 29
+        },
+        {
+          "name": "prop_L31",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 31
+        },
+        {
+          "name": "prop_L34",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 34
+        },
+        {
+          "name": "prop_L37",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 37
+        },
+        {
+          "name": "prop_L85",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 85
+        },
+        {
+          "name": "prop_L86",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 86
+        },
+        {
+          "name": "prop_L87",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 87
+        },
+        {
+          "name": "prop_L88",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 88
+        },
+        {
+          "name": "prop_L89",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 89
+        },
+        {
+          "name": "prop_L107",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 107
+        },
+        {
+          "name": "prop_L108",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 108
+        },
+        {
+          "name": "prop_L109",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 109
+        },
+        {
+          "name": "prop_L127",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 127
+        },
+        {
+          "name": "prop_L128",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 128
+        },
+        {
+          "name": "prop_L129",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 129
+        },
+        {
+          "name": "prop_L130",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 130
+        },
+        {
+          "name": "prop_L152",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 152
+        },
+        {
+          "name": "prop_L153",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 153
+        },
+        {
+          "name": "prop_L154",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 154
+        },
+        {
+          "name": "prop_L155",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 155
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/PropiedadesCBackend.lean",
+      "total": 8,
+      "passing": 8,
+      "failing": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "T1_sanitize_cases",
+          "status": "PASS"
+        },
+        {
+          "name": "T2_header_includes",
+          "status": "PASS"
+        },
+        {
+          "name": "T3_all_constructors",
+          "status": "PASS"
+        },
+        {
+          "name": "T4_ite_with_skip_else",
+          "status": "PASS"
+        },
+        {
+          "name": "T5_complex_store",
+          "status": "PASS"
+        },
+        {
+          "name": "T6_empty_main",
+          "status": "PASS"
+        },
+        {
+          "name": "T7_deep_nesting (braces: 4/4)",
+          "status": "PASS"
+        },
+        {
+          "name": "T8_all_operators",
+          "status": "PASS"
+        }
+      ]
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N9.4 Integration Regression": {
+    "node": "N9.4 Integration Regression",
+    "properties": {
+      "file": "Tests/Properties/IntegrationRegression.lean",
+      "total": 33,
+      "passing": 33,
+      "failing": 0,
+      "not_runnable": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "prop_L18",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 18
+        },
+        {
+          "name": "prop_L19",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 19
+        },
+        {
+          "name": "prop_L20",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 20
+        },
+        {
+          "name": "prop_L21",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 21
+        },
+        {
+          "name": "prop_L22",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 22
+        },
+        {
+          "name": "prop_L23",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 23
+        },
+        {
+          "name": "prop_L24",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 24
+        },
+        {
+          "name": "prop_L25",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 25
+        },
+        {
+          "name": "prop_L26",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 26
+        },
+        {
+          "name": "prop_L27",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 27
+        },
+        {
+          "name": "prop_L47",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 47
+        },
+        {
+          "name": "prop_L48",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 48
+        },
+        {
+          "name": "prop_L49",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 49
+        },
+        {
+          "name": "prop_L50",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 50
+        },
+        {
+          "name": "prop_L51",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 51
+        },
+        {
+          "name": "prop_L52",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 52
+        },
+        {
+          "name": "prop_L53",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 53
+        },
+        {
+          "name": "prop_L71",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 71
+        },
+        {
+          "name": "prop_L72",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 72
+        },
+        {
+          "name": "prop_L73",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 73
+        },
+        {
+          "name": "prop_L74",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 74
+        },
+        {
+          "name": "prop_L75",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 75
+        },
+        {
+          "name": "prop_L94",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 94
+        },
+        {
+          "name": "prop_L95",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 95
+        },
+        {
+          "name": "prop_L96",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 96
+        },
+        {
+          "name": "prop_L98",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 98
+        },
+        {
+          "name": "prop_L100",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 100
+        },
+        {
+          "name": "prop_L145",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 145
+        },
+        {
+          "name": "prop_L146",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 146
+        },
+        {
+          "name": "prop_L147",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 147
+        },
+        {
+          "name": "prop_L149",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 149
+        },
+        {
+          "name": "prop_L153",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 153
+        },
+        {
+          "name": "prop_L154",
+          "priority": "P1",
+          "type": "UNKNOWN",
+          "status": "PASS",
+          "line": 154
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/IntegrationRegression.lean",
+      "total": 16,
+      "passing": 16,
+      "failing": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "T1_arithmetic",
+          "status": "PASS"
+        },
+        {
+          "name": "T2_conditional",
+          "status": "PASS"
+        },
+        {
+          "name": "T3_while_loop",
+          "status": "PASS"
+        },
+        {
+          "name": "T4_array_store_load",
+          "status": "PASS"
+        },
+        {
+          "name": "T5_empty_program",
+          "status": "PASS"
+        },
+        {
+          "name": "T6_zero_iterations",
+          "status": "PASS"
+        },
+        {
+          "name": "T7_deep_nesting (braces: 4/4)",
+          "status": "PASS"
+        },
+        {
+          "name": "T8_precedence",
+          "status": "PASS"
+        },
+        {
+          "name": "T9_complex_index",
+          "status": "PASS"
+        },
+        {
+          "name": "T10_identifier_sanitization",
+          "status": "PASS"
+        },
+        {
+          "name": "T11_stress_sequential (979 chars)",
+          "status": "PASS"
+        },
+        {
+          "name": "T12_negative_literals",
+          "status": "PASS"
+        },
+        {
+          "name": "T13_boolean_shortcircuit",
+          "status": "PASS"
+        },
+        {
+          "name": "T14_all_constructors (12/12)",
+          "status": "PASS"
+        },
+        {
+          "name": "T15_stdint_inclusion",
+          "status": "PASS"
+        },
+        {
+          "name": "T16_stdbool_inclusion",
+          "status": "PASS"
+        }
+      ]
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N1.1 Core Value Stmt": {
+    "node": "N1.1 Core Value Stmt",
+    "properties": {
+      "file": "Tests/Properties/CoreValueStmt.lean",
+      "total": 45,
+      "passing": 45,
+      "failing": 0,
+      "not_runnable": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "evalBinOp add on Ints produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 25
+        },
+        {
+          "name": "evalBinOp add on Ints produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 26
+        },
+        {
+          "name": "evalBinOp add on Ints produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 27
+        },
+        {
+          "name": "evalBinOp add on Ints produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 29
+        },
+        {
+          "name": "evalBinOp add on Ints produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 30
+        },
+        {
+          "name": "evalBinOp add on Ints produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 31
+        },
+        {
+          "name": "evalBinOp add on Ints produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 32
+        },
+        {
+          "name": "evalBinOp logical on Bools produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 36
+        },
+        {
+          "name": "evalBinOp logical on Bools produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 37
+        },
+        {
+          "name": "evalBinOp logical on Bools produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 38
+        },
+        {
+          "name": "evalBinOp logical on Bools produces correct result",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 39
+        },
+        {
+          "name": "add is commutative",
+          "priority": "P1",
+          "type": "COMMUTATIVITY",
+          "status": "PASS",
+          "line": 43
+        },
+        {
+          "name": "mul is commutative",
+          "priority": "P1",
+          "type": "COMMUTATIVITY",
+          "status": "PASS",
+          "line": 47
+        },
+        {
+          "name": "land is commutative",
+          "priority": "P1",
+          "type": "COMMUTATIVITY",
+          "status": "PASS",
+          "line": 51
+        },
+        {
+          "name": "lor is commutative",
+          "priority": "P1",
+          "type": "COMMUTATIVITY",
+          "status": "PASS",
+          "line": 55
+        },
+        {
+          "name": "eqOp is commutative on concrete values",
+          "priority": "P1",
+          "type": "COMMUTATIVITY",
+          "status": "PASS",
+          "line": 59
+        },
+        {
+          "name": "eqOp is commutative on concrete values",
+          "priority": "P1",
+          "type": "COMMUTATIVITY",
+          "status": "PASS",
+          "line": 60
+        },
+        {
+          "name": "eqOp is commutative on concrete values",
+          "priority": "P1",
+          "type": "COMMUTATIVITY",
+          "status": "PASS",
+          "line": 61
+        },
+        {
+          "name": "eqOp is commutative on concrete values",
+          "priority": "P1",
+          "type": "COMMUTATIVITY",
+          "status": "PASS",
+          "line": 63
+        },
+        {
+          "name": "mismatched types always produce none",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 76
+        },
+        {
+          "name": "mismatched types always produce none",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 77
+        },
+        {
+          "name": "mismatched types always produce none",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 78
+        },
+        {
+          "name": "mismatched types always produce none",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 79
+        },
+        {
+          "name": "mismatched types always produce none",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 81
+        },
+        {
+          "name": "mismatched types always produce none",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 82
+        },
+        {
+          "name": "mismatched types always produce none",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 84
+        },
+        {
+          "name": "mismatched types always produce none",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 85
+        },
+        {
+          "name": "evalUnaryOp neg on Int",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 89
+        },
+        {
+          "name": "evalUnaryOp lnot on Bool",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 91
+        },
+        {
+          "name": "mismatched types",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 93
+        },
+        {
+          "name": "mismatched types",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 94
+        },
+        {
+          "name": "neg is an involution on Ints",
+          "priority": "P1",
+          "type": "IDEMPOTENCY",
+          "status": "PASS",
+          "line": 98
+        },
+        {
+          "name": "lnot is an involution on Bools",
+          "priority": "P1",
+          "type": "IDEMPOTENCY",
+          "status": "PASS",
+          "line": 102
+        },
+        {
+          "name": "updating a key and reading it returns the new value",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 107
+        },
+        {
+          "name": "update on k1 does not affect k2 when k1 != k2",
+          "priority": "P1",
+          "type": "PRESERVATION",
+          "status": "PASS",
+          "line": 113
+        },
+        {
+          "name": "consecutive freshVar calls produce different names",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 120
+        },
+        {
+          "name": "consecutive freshVar calls produce different names",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 123
+        },
+        {
+          "name": "consecutive freshVar calls produce different names",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 126
+        },
+        {
+          "name": "desugarFor is seq of init + while(cond, seq(body, step))",
+          "priority": "P1",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 132
+        },
+        {
+          "name": "isNormal and isLoopSignal are never both true",
+          "priority": "P2",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 139
+        },
+        {
+          "name": "normal implies terminating (they can overlap at normal)",
+          "priority": "P2",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 144
+        },
+        {
+          "name": "empty list yields skip",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 149
+        },
+        {
+          "name": "single element yields assign",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 152
+        },
+        {
+          "name": "two elements yield seq",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 155
+        },
+        {
+          "name": "three elements",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 160
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/CoreValueStmt.lean",
+      "total": 0,
+      "passing": 0,
+      "failing": 0,
+      "errors": 0,
+      "details": []
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N1.2 Core Eval Foundation": {
+    "node": "N1.2 Core Eval Foundation",
+    "properties": {
+      "file": "Tests/Properties/CoreEvalFoundation.lean",
+      "total": 16,
+      "passing": 16,
+      "failing": 0,
+      "not_runnable": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "evalExpr returns Option Value, no state modification by design",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 32
+        },
+        {
+          "name": "evalExpr returns Option Value, no state modification by design",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 33
+        },
+        {
+          "name": "evalExpr returns Option Value, no state modification by design",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 34
+        },
+        {
+          "name": "evalExpr returns Option Value, no state modification by design",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 39
+        },
+        {
+          "name": "fuel monotonicity holds (verified theorem)",
+          "priority": "P0",
+          "type": "PRESERVATION",
+          "status": "PASS",
+          "line": 55
+        },
+        {
+          "name": "fuel monotonicity holds (verified theorem)",
+          "priority": "P0",
+          "type": "PRESERVATION",
+          "status": "PASS",
+          "line": 60
+        },
+        {
+          "name": "fuel monotonicity holds (verified theorem)",
+          "priority": "P0",
+          "type": "PRESERVATION",
+          "status": "PASS",
+          "line": 64
+        },
+        {
+          "name": "fuel monotonicity holds (verified theorem)",
+          "priority": "P0",
+          "type": "PRESERVATION",
+          "status": "PASS",
+          "line": 69
+        },
+        {
+          "name": "break in first position of seq propagates",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 79
+        },
+        {
+          "name": "break in first position of seq propagates",
+          "priority": "P1",
+          "type": "SOUNDNESS",
+          "status": "PASS",
+          "line": 85
+        },
+        {
+          "name": "assigning to \"x\" does not change \"y\"",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 96
+        },
+        {
+          "name": "assigning to \"x\" does not change \"y\"",
+          "priority": "P1",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 102
+        },
+        {
+          "name": "skip ; s = s (left identity)",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 113
+        },
+        {
+          "name": "s ; skip = s (right identity, when s is normal)",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 119
+        },
+        {
+          "name": "s ; skip = s (right identity, when s is normal)",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 130
+        },
+        {
+          "name": "s ; skip = s (right identity, when s is normal)",
+          "priority": "P2",
+          "type": "EQUIVALENCE",
+          "status": "PASS",
+          "line": 135
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/CoreEvalFoundation.lean",
+      "total": 0,
+      "passing": 0,
+      "failing": 0,
+      "errors": 0,
+      "details": []
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  },
+  "N1.3 Typeclasses": {
+    "node": "N1.3 Typeclasses",
+    "properties": {
+      "file": "Tests/Properties/Typeclasses.lean",
+      "total": 31,
+      "passing": 31,
+      "failing": 0,
+      "not_runnable": 0,
+      "errors": 0,
+      "details": [
+        {
+          "name": "stmtToC is deterministic (pure function)",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 37
+        },
+        {
+          "name": "exprToC is deterministic (pure function)",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 40
+        },
+        {
+          "name": "BackendEmitter instance for CConfig is deterministic",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 43
+        },
+        {
+          "name": "concrete examples",
+          "priority": "P1",
+          "type": "IDEMPOTENCY",
+          "status": "PASS",
+          "line": 65
+        },
+        {
+          "name": "concrete examples",
+          "priority": "P1",
+          "type": "IDEMPOTENCY",
+          "status": "PASS",
+          "line": 68
+        },
+        {
+          "name": "concrete examples",
+          "priority": "P1",
+          "type": "IDEMPOTENCY",
+          "status": "PASS",
+          "line": 71
+        },
+        {
+          "name": "concrete examples",
+          "priority": "P1",
+          "type": "IDEMPOTENCY",
+          "status": "PASS",
+          "line": 74
+        },
+        {
+          "name": "concrete examples",
+          "priority": "P1",
+          "type": "IDEMPOTENCY",
+          "status": "PASS",
+          "line": 77
+        },
+        {
+          "name": "concrete examples",
+          "priority": "P1",
+          "type": "IDEMPOTENCY",
+          "status": "PASS",
+          "line": 80
+        },
+        {
+          "name": "concrete examples",
+          "priority": "P1",
+          "type": "IDEMPOTENCY",
+          "status": "PASS",
+          "line": 83
+        },
+        {
+          "name": "concrete examples",
+          "priority": "P1",
+          "type": "IDEMPOTENCY",
+          "status": "PASS",
+          "line": 86
+        },
+        {
+          "name": "concrete verification",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 98
+        },
+        {
+          "name": "concrete verification",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 99
+        },
+        {
+          "name": "concrete verification",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 100
+        },
+        {
+          "name": "concrete verification",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 101
+        },
+        {
+          "name": "concrete verification",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 102
+        },
+        {
+          "name": "concrete verification",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 103
+        },
+        {
+          "name": "concrete verification",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 104
+        },
+        {
+          "name": "not a C keyword",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 109
+        },
+        {
+          "name": "not a C keyword",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 110
+        },
+        {
+          "name": "not a C keyword",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 111
+        },
+        {
+          "name": "balanced braces on concrete examples",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 119
+        },
+        {
+          "name": "balanced braces on concrete examples",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 122
+        },
+        {
+          "name": "balanced braces on concrete examples",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 125
+        },
+        {
+          "name": "balanced braces on concrete examples",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 128
+        },
+        {
+          "name": "balanced braces on concrete examples",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 132
+        },
+        {
+          "name": "balanced braces on concrete examples",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 136
+        },
+        {
+          "name": "balanced braces on concrete examples",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 140
+        },
+        {
+          "name": "balanced braces on concrete examples",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 146
+        },
+        {
+          "name": "balanced braces on concrete examples",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 150
+        },
+        {
+          "name": "balanced braces on concrete examples",
+          "priority": "P0",
+          "type": "INVARIANT",
+          "status": "PASS",
+          "line": 156
+        }
+      ]
+    },
+    "integration": {
+      "file": "Tests/Integration/Typeclasses.lean",
+      "total": 0,
+      "passing": 0,
+      "failing": 0,
+      "errors": 0,
+      "details": []
+    },
+    "all_pass": true,
+    "p0_pass": true,
+    "blocking_failures": []
+  }
+}
