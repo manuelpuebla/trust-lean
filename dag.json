@@ -1,290 +1,23 @@
 {
-  "version": "v1.2.0",
+  "version": "v3.0.0",
   "project": "Trust-Lean",
   "phases": [
     {
-      "id": "fase1",
-      "name": "Core Framework",
+      "id": "int64",
+      "name": "Int64 Overflow Semantics",
       "status": "completed",
       "nodes": [
         {
-          "id": "N1.1",
-          "name": "Core Value + Stmt",
-          "type": "FUNDACIONAL",
+          "id": "N14.1",
+          "name": "Int64 Types + Properties",
+          "type": "FUND",
           "status": "completed",
           "files": [
-            "TrustLean/Core/Value.lean",
-            "TrustLean/Core/Stmt.lean"
-          ],
-          "deps": [],
-          "properties": {
-            "total": 12,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 0
-          }
-        },
-        {
-          "id": "N1.2",
-          "name": "Core Eval + Foundation",
-          "type": "FUNDACIONAL",
-          "status": "completed",
-          "files": [
-            "TrustLean/Core/Eval.lean",
-            "TrustLean/Core/Foundation.lean",
-            "TrustLean/Core/FuelMono.lean"
-          ],
-          "deps": [
-            "N1.1"
-          ],
-          "properties": {
-            "total": 5,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 0
-          }
-        },
-        {
-          "id": "N1.3",
-          "name": "Typeclasses",
-          "type": "CRITICO",
-          "status": "completed",
-          "files": [
-            "TrustLean/Typeclass/CodeGenerable.lean",
-            "TrustLean/Typeclass/CodeGenSound.lean",
-            "TrustLean/Typeclass/BackendEmitter.lean"
-          ],
-          "deps": [
-            "N1.2"
-          ],
-          "properties": {
-            "total": 5,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 0
-          }
-        }
-      ]
-    },
-    {
-      "id": "fase2",
-      "name": "Frontends",
-      "status": "completed",
-      "nodes": [
-        {
-          "id": "N2.1",
-          "name": "ArithExpr Frontend",
-          "type": "PARALELO",
-          "status": "completed",
-          "files": [
-            "TrustLean/Frontend/ArithExpr/Syntax.lean",
-            "TrustLean/Frontend/ArithExpr/Compile.lean",
-            "TrustLean/Frontend/ArithExpr/Correctness.lean"
-          ],
-          "deps": [
-            "N1.3"
-          ],
-          "properties": {
-            "total": 5,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 0
-          }
-        },
-        {
-          "id": "N2.2",
-          "name": "BoolExpr Frontend",
-          "type": "PARALELO",
-          "status": "completed",
-          "files": [
-            "TrustLean/Frontend/BoolExpr/Syntax.lean",
-            "TrustLean/Frontend/BoolExpr/Compile.lean",
-            "TrustLean/Frontend/BoolExpr/Correctness.lean"
-          ],
-          "deps": [
-            "N1.3"
-          ],
-          "properties": {
-            "total": 3,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 0
-          }
-        },
-        {
-          "id": "N2.3",
-          "name": "ImpStmt Frontend",
-          "type": "PARALELO",
-          "status": "completed",
-          "files": [
-            "TrustLean/Frontend/ImpStmt/Syntax.lean",
-            "TrustLean/Frontend/ImpStmt/Compile.lean",
-            "TrustLean/Frontend/ImpStmt/Correctness.lean"
-          ],
-          "deps": [
-            "N1.3"
-          ],
-          "properties": {
-            "total": 6,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 0
-          }
-        }
-      ]
-    },
-    {
-      "id": "fase3",
-      "name": "Bridge + Pipeline",
-      "status": "completed",
-      "nodes": [
-        {
-          "id": "N3.1",
-          "name": "Bridge ExpandedSigma",
-          "type": "CRITICO",
-          "status": "completed",
-          "files": [
-            "TrustLean/Bridge/Types.lean",
-            "TrustLean/Bridge/ExprTranslation.lean",
-            "TrustLean/Bridge/ScalarTranslation.lean",
-            "TrustLean/Bridge/MemoryTranslation.lean",
-            "TrustLean/Bridge/Compile.lean",
-            "TrustLean/Bridge/Semantics.lean",
-            "TrustLean/Bridge/Correctness.lean"
-          ],
-          "deps": [
-            "N2.1",
-            "N2.2",
-            "N2.3"
-          ],
-          "properties": {
-            "total": 5,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 0
-          }
-        },
-        {
-          "id": "N3.2",
-          "name": "Pipeline + RustBackend",
-          "type": "HOJA",
-          "status": "completed",
-          "files": [
-            "TrustLean/Pipeline.lean",
-            "TrustLean/Backend/RustBackend.lean"
-          ],
-          "deps": [
-            "N3.1"
-          ],
-          "properties": {
-            "total": 6,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 0
-          }
-        }
-      ]
-    },
-    {
-      "id": "fase9",
-      "name": "CBackend Industrial",
-      "status": "completed",
-      "nodes": [
-        {
-          "id": "N9.1",
-          "name": "Sanitizaci\u00f3n y Helpers",
-          "type": "FUNDACIONAL",
-          "status": "completed",
-          "files": [
-            "TrustLean/Backend/Common.lean"
+            "TrustLean/MicroC/Int64.lean"
           ],
           "deps": [],
           "blocks": [
-            "B20"
-          ],
-          "metrics": {
-            "loc": 0,
-            "theorems": 0,
-            "lemmas": 0,
-            "defs": 0,
-            "sorry": 0
-          },
-          "properties": {
-            "total": 4,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 0
-          }
-        },
-        {
-          "id": "N9.2",
-          "name": "CBackend Refactor",
-          "type": "CRITICO",
-          "status": "completed",
-          "files": [
-            "TrustLean/Backend/CBackend.lean"
-          ],
-          "deps": [
-            "N9.1"
-          ],
-          "blocks": [
-            "B21"
-          ],
-          "metrics": {
-            "loc": 0,
-            "theorems": 0,
-            "lemmas": 0,
-            "defs": 0,
-            "sorry": 0
-          },
-          "properties": {
-            "total": 6,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 1
-          }
-        },
-        {
-          "id": "N9.3",
-          "name": "Propiedades Formales CBackend",
-          "type": "PARALELO",
-          "status": "completed",
-          "files": [
-            "TrustLean/Backend/CBackendProperties.lean"
-          ],
-          "deps": [
-            "N9.2"
-          ],
-          "blocks": [
-            "B22"
-          ],
-          "metrics": {
-            "loc": 0,
-            "theorems": 0,
-            "lemmas": 0,
-            "defs": 0,
-            "sorry": 0
-          },
-          "properties": {
-            "total": 6,
-            "passing": 0,
-            "failing": 0,
-            "not_runnable": 1
-          }
-        },
-        {
-          "id": "N9.4",
-          "name": "Integration Tests + Regression",
-          "type": "PARALELO",
-          "status": "completed",
-          "files": [
-            "TrustLean/Tests/CBackendIntegration.lean"
-          ],
-          "deps": [
-            "N9.2"
-          ],
-          "blocks": [
-            "B22"
+            "B1"
           ],
           "metrics": {
             "loc": 0,
@@ -301,17 +34,18 @@
           }
         },
         {
-          "id": "N9.5",
-          "name": "Zero Sorry + Final Audit",
-          "type": "HOJA",
+          "id": "N14.2",
+          "name": "Int64 Evaluator + Fuel Monotonicity",
+          "type": "CRIT",
           "status": "completed",
-          "files": [],
+          "files": [
+            "TrustLean/MicroC/Int64Eval.lean"
+          ],
           "deps": [
-            "N9.3",
-            "N9.4"
+            "N14.1"
           ],
           "blocks": [
-            "B23"
+            "B2"
           ],
           "metrics": {
             "loc": 0,
@@ -321,7 +55,35 @@
             "sorry": 0
           },
           "properties": {
-            "total": 6,
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N14.3",
+          "name": "Int64 Agreement + Non-Vacuity",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Int64Agreement.lean"
+          ],
+          "deps": [
+            "N14.2"
+          ],
+          "blocks": [
+            "B3"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
             "passing": 0,
             "failing": 0,
             "not_runnable": 0
@@ -330,49 +92,352 @@
       ],
       "blocks": [
         {
-          "id": "B20",
-          "name": "Sanitizaci\u00f3n y Helpers",
+          "id": "B1",
+          "name": "Int64 Foundation",
           "nodes": [
-            "N9.1"
+            "N14.1"
           ],
           "status": "completed",
-          "closed_at": "2026-02-21"
+          "closed_at": "2026-03-11"
         },
         {
-          "id": "B21",
-          "name": "CBackend Refactor",
+          "id": "B2",
+          "name": "Int64 Eval + FuelMono",
           "nodes": [
-            "N9.2"
+            "N14.2"
           ],
           "status": "completed",
-          "closed_at": "2026-02-21"
+          "closed_at": "2026-03-11"
         },
         {
-          "id": "B22",
-          "name": "Properties + Tests",
+          "id": "B3",
+          "name": "Int64 Agreement",
           "nodes": [
-            "N9.3",
-            "N9.4"
+            "N14.3"
           ],
           "status": "completed",
-          "closed_at": "2026-02-21"
+          "closed_at": "2026-03-11"
+        }
+      ]
+    },
+    {
+      "id": "call",
+      "name": "Call Semantics",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N15.1",
+          "name": "Call Types + Environment",
+          "type": "FUND",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/CallTypes.lean"
+          ],
+          "deps": [],
+          "blocks": [
+            "B4"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
         },
         {
-          "id": "B23",
-          "name": "Zero Sorry Audit",
+          "id": "N15.2",
+          "name": "Call Evaluator + Fuel Monotonicity",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/CallEval.lean"
+          ],
+          "deps": [
+            "N15.1"
+          ],
+          "blocks": [
+            "B5"
+          ],
+          "metrics": {
+            "loc": 562,
+            "theorems": 7,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 3,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N15.3",
+          "name": "Call Simulation + Bridge",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/CallSimulation.lean"
+          ],
+          "deps": [
+            "N15.2"
+          ],
+          "blocks": [
+            "B6"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B4",
+          "name": "Call Types",
           "nodes": [
-            "N9.5"
+            "N15.1"
           ],
           "status": "completed",
-          "closed_at": "2026-02-21"
+          "closed_at": "2026-03-11"
+        },
+        {
+          "id": "B5",
+          "name": "Call Eval + FuelMono",
+          "nodes": [
+            "N15.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        },
+        {
+          "id": "B6",
+          "name": "Call Simulation + Bridge",
+          "nodes": [
+            "N15.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        }
+      ]
+    },
+    {
+      "id": "roundtrip",
+      "name": "Full Inductive Roundtrip",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N16.1",
+          "name": "Expression Roundtrip (all WFExpr)",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/RoundtripExpr.lean"
+          ],
+          "deps": [],
+          "blocks": [
+            "B7"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N16.2",
+          "name": "Statement Roundtrip (all WFStmt)",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/RoundtripStmt.lean"
+          ],
+          "deps": [
+            "N16.1"
+          ],
+          "blocks": [
+            "B8"
+          ],
+          "metrics": {
+            "loc": 1620,
+            "theorems": 63,
+            "lemmas": 0,
+            "defs": 9,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 2,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N16.3",
+          "name": "Master Roundtrip Theorem",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/RoundtripMaster.lean"
+          ],
+          "deps": [
+            "N16.2"
+          ],
+          "blocks": [
+            "B9"
+          ],
+          "metrics": {
+            "loc": 131,
+            "theorems": 2,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 2,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B7",
+          "name": "Expression Roundtrip",
+          "nodes": [
+            "N16.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        },
+        {
+          "id": "B8",
+          "name": "Statement Roundtrip",
+          "nodes": [
+            "N16.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-12"
+        },
+        {
+          "id": "B9",
+          "name": "Master Roundtrip",
+          "nodes": [
+            "N16.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-12"
+        }
+      ]
+    },
+    {
+      "id": "integration",
+      "name": "v3.0 Integration + Audit",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N17.1",
+          "name": "Oracle Tests + Compatibility",
+          "type": "PAR",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Integration_v3.lean"
+          ],
+          "deps": [
+            "N14.3",
+            "N15.3",
+            "N16.3"
+          ],
+          "blocks": [
+            "B10"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N17.2",
+          "name": "Non-Vacuity + Zero Sorry Audit",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Integration_v3.lean"
+          ],
+          "deps": [
+            "N17.1"
+          ],
+          "blocks": [
+            "B10"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B10",
+          "name": "Integration + Audit",
+          "nodes": [
+            "N17.1",
+            "N17.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-12"
         }
       ]
     }
   ],
   "meta": {
     "created": "2026-02-20T19:23:56Z",
-    "updated": "2026-02-21T15:42:51Z",
-    "total_nodes": 5,
-    "completed_nodes": 5
+    "updated": "2026-03-12T14:10:53Z",
+    "total_nodes": 11,
+    "completed_nodes": 11
   }
 }

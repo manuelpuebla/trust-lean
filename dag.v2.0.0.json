@@ -1,0 +1,676 @@
+{
+  "version": "v2.0.0",
+  "project": "Trust-Lean",
+  "phases": [
+    {
+      "id": "fase9",
+      "name": "MicroC Foundations",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N10.1",
+          "name": "MicroC AST + Properties",
+          "type": "FUND",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/AST.lean"
+          ],
+          "deps": [],
+          "blocks": [
+            "B1"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 3,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [
+              "verificacion/mechanized-semantics-for-clight-subset-of-c-blazy-leroy-jar-2009.md"
+            ],
+            "lessons": [
+              "L-252",
+              "L-375"
+            ],
+            "libraries": [],
+            "notes": "MicroCExpr (7 constructors) + MicroCStmt (11 constructors, no for_). Use deriving DecidableEq. String identifiers (flat namespace). Document: no shadowing, no heap, no short-circuit."
+          }
+        },
+        {
+          "id": "N10.2",
+          "name": "MicroC Evaluator",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Eval.lean"
+          ],
+          "deps": [
+            "N10.1"
+          ],
+          "blocks": [
+            "B2"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 4,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [
+              "verificacion/compositional-optimizations-for-certicoq-paraskevopoulou-appel-icfp-2021.md"
+            ],
+            "lessons": [
+              "L-265",
+              "L-325",
+              "L-288",
+              "L-289",
+              "L-470"
+            ],
+            "libraries": [],
+            "notes": "Mirror evalStmt structure exactly. Fuel = depth bound (max composition). 6 while-loop outcome paths. evalMicroCExpr + evalMicroC in same file. Fuel as LAST argument for mutual recursion."
+          }
+        },
+        {
+          "id": "N10.3",
+          "name": "evalMicroC_fuel_mono (GATE)",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/FuelMono.lean"
+          ],
+          "deps": [
+            "N10.2"
+          ],
+          "blocks": [
+            "B3"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 1,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [],
+            "lessons": [
+              "L-292",
+              "L-305",
+              "L-268"
+            ],
+            "libraries": [],
+            "notes": "Mirror existing FuelMono.lean pattern (250 LOC). Nested induction: structural on MicroCStmt + strong fuel. Generalize to ALL non-outOfFuel outcomes. DE-RISK: sketch proof skeleton BEFORE writing full proof."
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B1",
+          "name": "MicroC AST",
+          "nodes": [
+            "N10.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-10"
+        },
+        {
+          "id": "B2",
+          "name": "MicroC Evaluator",
+          "nodes": [
+            "N10.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-10"
+        },
+        {
+          "id": "B3",
+          "name": "Fuel Monotonicity Gate",
+          "nodes": [
+            "N10.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-10"
+        }
+      ]
+    },
+    {
+      "id": "fase10",
+      "name": "Translation + Simulation",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N11.1",
+          "name": "stmtToMicroC Translation",
+          "type": "PAR",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Translation.lean"
+          ],
+          "deps": [
+            "N10.1"
+          ],
+          "blocks": [
+            "B4"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [
+              "verificacion/zaliva-helix-verified-translation-functional-imperative-vstte-2020.md"
+            ],
+            "lessons": [
+              "L-318",
+              "L-346",
+              "L-337"
+            ],
+            "libraries": [],
+            "notes": "exprToMicroC (VarName→String via varNameToC) + stmtToMicroC. for_ desugars to seq+while. Include compatibility sketch: microCToString(stmtToMicroC s) vs stmtToC s — DE-RISK early."
+          }
+        },
+        {
+          "id": "N11.2",
+          "name": "microCBridge + Correspondence",
+          "type": "FUND",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Bridge.lean"
+          ],
+          "deps": [
+            "N10.1"
+          ],
+          "blocks": [
+            "B4"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [],
+            "lessons": [
+              "L-290",
+              "L-315",
+              "L-306",
+              "L-121"
+            ],
+            "libraries": [],
+            "notes": "microCBridge : LowLevelEnv → MicroCEnv → Prop. Key: ∀ v, microCEnv (varNameToC v) = llEnv v. Prove varNameToC injectivity (follows from sanitizeIdentifier properties + constructor disjointness). Bridge preservation through env updates."
+          }
+        },
+        {
+          "id": "N11.3",
+          "name": "Simulation Per-Case Lemmas",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Simulation.lean"
+          ],
+          "deps": [
+            "N10.3",
+            "N11.1",
+            "N11.2"
+          ],
+          "blocks": [
+            "B5"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 1,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [
+              "verificacion/compositional-optimizations-for-certicoq-paraskevopoulou-appel-icfp-2021.md"
+            ],
+            "lessons": [
+              "L-305",
+              "L-337",
+              "L-289",
+              "L-453"
+            ],
+            "libraries": [],
+            "notes": "One lemma per Stmt constructor. While case has 6 outcome paths (L-289). Use compositional helper lemmas (L-337). Fuel bound: max composition for seq/ite, n+1+n*(body+1) for while."
+          }
+        },
+        {
+          "id": "N11.4",
+          "name": "stmtToMicroC_correct (GATE)",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Simulation.lean"
+          ],
+          "deps": [
+            "N11.3"
+          ],
+          "blocks": [
+            "B6"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 1,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [],
+            "lessons": [
+              "L-513",
+              "L-415"
+            ],
+            "libraries": [],
+            "notes": "Capstone 1: evalStmt ≡ evalMicroC ∘ stmtToMicroC. Compose per-case lemmas from N11.3. Non-vacuity example MANDATORY (joint witness with all hypotheses)."
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B4",
+          "name": "Translation + Bridge",
+          "nodes": [
+            "N11.1",
+            "N11.2"
+          ],
+          "status": "pending",
+          "closed_at": null
+        },
+        {
+          "id": "B5",
+          "name": "Simulation Lemmas",
+          "nodes": [
+            "N11.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-10"
+        },
+        {
+          "id": "B6",
+          "name": "Simulation Capstone",
+          "nodes": [
+            "N11.4"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-10"
+        }
+      ]
+    },
+    {
+      "id": "fase11",
+      "name": "Pretty-Printer + Parser + Roundtrip",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N12.1",
+          "name": "microCToString Pretty-Printer",
+          "type": "PAR",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/PrettyPrint.lean"
+          ],
+          "deps": [
+            "N10.1"
+          ],
+          "blocks": [
+            "B7"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 3,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [],
+            "lessons": [
+              "L-308",
+              "L-368"
+            ],
+            "libraries": [],
+            "notes": "Mirror exprToC/stmtToC structure. Full parenthesization (canonical form). Structural props: balanced braces, balanced parens, nonempty for non-skip. Reference: Danielsson 2013 correct-by-construction pretty-printing."
+          }
+        },
+        {
+          "id": "N12.2",
+          "name": "parseMicroC Parser",
+          "type": "PAR",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Parser.lean"
+          ],
+          "deps": [
+            "N10.1"
+          ],
+          "blocks": [
+            "B7"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 1,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [],
+            "lessons": [
+              "L-358",
+              "L-368",
+              "L-261"
+            ],
+            "libraries": [],
+            "notes": "Use Lean.Data.Parsec built-in. ws after every token. Grammar is LL(1) due to full parenthesization. Expr parser: recursive descent. Stmt parser: keyword-prefixed dispatch. Non-goals: comments, #include, preprocessor. Reference: Narcissus ICFP 2019, EverParse USENIX 2019."
+          }
+        },
+        {
+          "id": "N12.3",
+          "name": "Expression Roundtrip + Structural Props",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Roundtrip.lean"
+          ],
+          "deps": [
+            "N12.1",
+            "N12.2"
+          ],
+          "blocks": [
+            "B8"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 1,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [],
+            "lessons": [
+              "L-358",
+              "L-368"
+            ],
+            "libraries": [],
+            "notes": "parseMicroCExpr(microCExprToString e) = some e by structural induction on e. Each case: show Parsec state machine advances correctly through parenthesized string. May need auxiliary Parsec lemmas (~50 LOC overhead)."
+          }
+        },
+        {
+          "id": "N12.4",
+          "name": "parseMicroC_roundtrip (GATE)",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Roundtrip.lean"
+          ],
+          "deps": [
+            "N12.3"
+          ],
+          "blocks": [
+            "B9"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 1,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [],
+            "lessons": [
+              "L-358",
+              "L-368",
+              "L-572"
+            ],
+            "libraries": [],
+            "notes": "Capstone 2: parseMicroC(microCToString s) = some s. Structural induction on s, using expr roundtrip (N12.3) as lemma. While and ite cases need careful handling of brace-delimited blocks. Non-vacuity example MANDATORY. Budget 400-450 LOC total for Roundtrip.lean."
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B7",
+          "name": "Pretty-Printer + Parser",
+          "nodes": [
+            "N12.1",
+            "N12.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-10"
+        },
+        {
+          "id": "B8",
+          "name": "Expression Roundtrip",
+          "nodes": [
+            "N12.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        },
+        {
+          "id": "B9",
+          "name": "Statement Roundtrip Capstone",
+          "nodes": [
+            "N12.4"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        }
+      ]
+    },
+    {
+      "id": "fase12",
+      "name": "Integration + Audit",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N13.1",
+          "name": "End-to-End Pipeline + Compatibility",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC.lean"
+          ],
+          "deps": [
+            "N11.4",
+            "N12.4",
+            "N12.1",
+            "N11.1"
+          ],
+          "blocks": [
+            "B10"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 1,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [],
+            "lessons": [
+              "L-513",
+              "L-572"
+            ],
+            "libraries": [],
+            "notes": "Compatibility theorem: microCToString(stmtToMicroC stmt) = stmtToC level stmt. Root import module. Pipeline: Stmt → MicroCStmt → C string → MicroCStmt (roundtrip). Depends explicitly on N12.1 (pretty-printer) and N11.1 (translation)."
+          }
+        },
+        {
+          "id": "N13.2",
+          "name": "Non-Vacuity + Oracle Tests",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [
+            "Tests/MicroC/NonVacuity.lean",
+            "Tests/MicroC/Integration.lean"
+          ],
+          "deps": [
+            "N13.1"
+          ],
+          "blocks": [
+            "B10"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 1,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [],
+            "lessons": [],
+            "libraries": [],
+            "notes": "Joint witness for stmtToMicroC_correct (all hypotheses satisfied with concrete values). Joint witness for parseMicroC_roundtrip. #eval smoke tests: compile sample programs through both pipelines, verify string equality."
+          }
+        },
+        {
+          "id": "N13.3",
+          "name": "Zero Sorry Audit",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [],
+          "deps": [
+            "N13.2"
+          ],
+          "blocks": [
+            "B10"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 0,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          },
+          "study": {
+            "papers": [],
+            "lessons": [],
+            "libraries": [],
+            "notes": "Mechanical: grep sorry across all TrustLean/MicroC/ and Tests/MicroC/. spec_audit.py --project. Verify 0 sorry, 0 identity passes, 0 T1/T1.5 issues."
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B10",
+          "name": "Integration + Audit",
+          "nodes": [
+            "N13.1",
+            "N13.2",
+            "N13.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "created": "2026-02-20T19:23:56Z",
+    "updated": "2026-03-11T00:41:51Z",
+    "total_nodes": 14,
+    "completed_nodes": 14
+  }
+}

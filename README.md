@@ -177,12 +177,26 @@ v1.1.0 (Feb 21)    0 axioms    0 sorry    AMO-Lean bridge (ExpandedSigma -> Stmt
 v1.2.0 (Feb 21)    0 axioms    0 sorry    Industrial CBackend + formal properties
 ```
 
-## Future Work
+## v2.0.0 Roadmap: MicroC Verified Semantics + Roundtrip Parser
+
+Trust-Lean v2.0.0 extends the framework with **MicroC**: a formal C99 subset with ~20 AST nodes, fuel-based semantics, a simulation proof, and a roundtrip parser theorem. This closes the formal chain from mathematics to C code.
+
+| Fase | Contents | Key Theorem | Status |
+|------|----------|-------------|--------|
+| **Fase 9**: MicroC Foundations | AST, evalMicroC, fuel mono | `evalMicroC_fuel_mono` | Planned |
+| **Fase 10**: Translation + Simulation | stmtToMicroC, bridge, sim proof | `stmtToMicroC_correct` | Planned |
+| **Fase 11**: Roundtrip | pretty-printer, parser, roundtrip | `parseMicroC_roundtrip` | Planned |
+| **Fase 12**: Integration | compatibility, tests, audit | `microCToString ∘ stmtToMicroC = stmtToC` | Planned |
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full DAG and design decisions.
+
+## Future Work (v3.0+)
 
 | Task | Relevance | Difficulty | Status |
 |------|-----------|------------|--------|
+| **int64_t overflow semantics** | High — wrapping arithmetic for C faithfulness | High | Planned (v3.0) |
+| **Short-circuit &&/\|\|** | Medium — needed for side-effecting expressions | Medium | Planned (v3.0) |
 | **RustBackend formal properties** | Medium — CBackend has 34 theorems, Rust has 4 | Low | Designed |
-| **SampleableExt instances** | Low — enables SlimCheck random testing | Medium | Deferred |
 | **Optimization passes** | High — constant folding, dead code elimination | High | Planned |
 | **LLVM/WebAssembly backends** | Medium — extends target coverage | Medium | Planned |
 | **Parallelism support** | Medium — `.par` currently interpreted as `.seq` | High | Deferred |
@@ -205,4 +219,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**Trust-Lean v1.2.0** — Every compilation step is a theorem.
+**Trust-Lean v1.2.0** — Every compilation step is a theorem. v2.0.0 planned: MicroC verified C semantics + roundtrip parser.

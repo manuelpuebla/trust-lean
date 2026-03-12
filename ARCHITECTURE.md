@@ -1,7 +1,329 @@
 # Trust-Lean: Architecture
 
-## Current Version: v1.2.0
+## Current Version: v3.0.0
 
+### Design Decisions (v3.0.0)
+
+1. **Extension-only architecture**: All v3.0 features add NEW files. No v2.0 files are modified. Zero regression risk.
+2. **Int64 as wrapping layer, not type change**: Keep `Value.int : Int` (unbounded). Add `wrapInt64 : Int → Int` with two's complement signed semantics. Create separate `evalMicroC_int64` evaluator. Agreement theorem proves equivalence for overflow-free programs.
+3. **wrapInt64 definition**: `let n' := n % twoPow64; if n' > maxInt64 then n' - twoPow64 else n'` where `twoPow64 = 2^64`, `maxInt64 = 2^63 - 1`. Lean 4 `Int.mod` is Euclidean (non-negative for positive divisor), so this correctly models two's complement.
+4. **Call semantics: non-recursive only**: `MicroCFuncEnv := String → Option MicroCFuncDef`. Precondition `NonRecursive`: no `.call` constructors in function bodies (checked by `HasCall` predicate). This rules out all recursion (direct, mutual, transitive).
+5. **Call scoping**: Fresh environment for callee. On `.call result fname args`: (1) lookup fname, (2) eval args in caller env, (3) create fresh env with params bound to arg values, (4) eval body in fresh env with remaining fuel, (5) extract return value, (6) update caller env with result = return value.
+6. **Roundtrip: expression-first**: WFExpr is self-recursive (no WFStmt dependency). Prove expression roundtrip by WFExpr induction, then statement roundtrip using expression roundtrip as lemma. No mutual induction needed.
+7. **Parser fuel = string length**: `exprFuel e := (microCExprToString e).toList.length`. Robust: fuel ≥ characters consumed. Avoids tree-depth vs string-length mismatch.
+8. **Feature ordering**: Int64 → Call → Roundtrip → Integration. Types first, evaluation second, proofs third. Phases 1 and 2 are independent but done sequentially for lesson transfer.
+
+### Int64 Overflow Semantics
+
+**Contents**: Two's complement wrapping arithmetic (mod 2^64) as extension layer. New evaluator evalMicroC_int64 wraps after arithmetic ops. Agreement theorem proves equivalence with unbounded evaluator for overflow-free programs.
+
+**Files**:
+- `TrustLean/MicroC/Int64.lean`
+- `TrustLean/MicroC/Int64Eval.lean`
+- `TrustLean/MicroC/Int64Agreement.lean`
+
+#### DAG (v3.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N14.1 Int64 Types + Properties | FUND | — | completed ✓ |
+| N14.2 Int64 Evaluator + Fuel Monotonicity | CRIT | N14.1 | completed ✓ |
+| N14.3 Int64 Agreement + Non-Vacuity | CRIT | N14.2 | completed ✓ |
+
+#### Formal Properties (v3.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N14.1 | wrapInt64 is idempotent | INVARIANT | P0 |
+| N14.1 | wrapInt64 is identity on InInt64Range values | INVARIANT | P0 |
+| N14.1 | wrapInt64 output is always in InInt64Range | INVARIANT | P0 |
+| N14.1 | Boundary: wrapInt64(maxInt64+1) = minInt64 | SOUNDNESS | P0 |
+| N14.1 | Boundary: wrapInt64(minInt64-1) = maxInt64 | SOUNDNESS | P0 |
+| N14.2 | evalMicroC_int64 fuel monotonicity | SOUNDNESS | P0 |
+| N14.2 | evalMicroC_int64 skip = unbounded skip | EQUIVALENCE | P0 |
+| N14.3 | BinOp in-range agreement: if result in Int64Range, int64 eval = unbounded eval | EQUIVALENCE | P0 |
+| N14.3 | Non-vacuity: overflow-free program agreement | SOUNDNESS | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [x] **Int64 Foundation**: N14.1 — closed 2026-03-11
+- [x] **Int64 Eval + FuelMono**: N14.2 — closed 2026-03-11
+- [x] **Int64 Agreement**: N14.3 — closed 2026-03-11
+
+### Call Semantics
+
+**Contents**: Function call evaluation replacing the evalMicroC stub (.call => none). MicroCFuncEnv maps function names to definitions. Non-recursive calls only (no call in function bodies). Fresh environment for callee, return value propagation.
+
+**Files**:
+- `TrustLean/MicroC/CallTypes.lean`
+- `TrustLean/MicroC/CallEval.lean`
+- `TrustLean/MicroC/CallSimulation.lean`
+
+#### DAG (v3.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N15.1 Call Types + Environment | FUND | — | completed ✓ |
+| N15.2 Call Evaluator + Fuel Monotonicity | CRIT | N15.1 | completed ✓ |
+| N15.3 Call Simulation + Bridge | CRIT | N15.2 | completed ✓ |
+
+#### Formal Properties (v3.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N15.1 | MicroCFuncEnv.default returns none for all lookups | INVARIANT | P0 |
+| N15.1 | NonRecursive: no HasCall in function bodies | INVARIANT | P0 |
+| N15.2 | evalMicroC_withCalls fuel monotonicity | SOUNDNESS | P0 |
+| N15.2 | evalMicroC_withCalls on call-free program = evalMicroC | EQUIVALENCE | P0 |
+| N15.2 | evalMicroC_withCalls with fresh env for callee (no scope leak) | SOUNDNESS | P0 |
+| N15.3 | Call simulation: bridge preserved through call evaluation | SOUNDNESS | P0 |
+| N15.3 | Non-vacuity: concrete call evaluation succeeds | SOUNDNESS | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [x] **Call Types**: N15.1 — closed 2026-03-11
+- [x] **Call Eval + FuelMono**: N15.2 — closed 2026-03-11
+- [x] **Call Simulation + Bridge**: N15.3 — closed 2026-03-11
+
+### Full Inductive Roundtrip
+
+**Contents**: Close the inductive roundtrip proof for ALL WFStmt/WFExpr constructors. Strategy: expression roundtrip first (WFExpr induction, no mutual recursion needed), then statement roundtrip using expression roundtrip as lemma. Parser fuel based on string length for robustness.
+
+**Files**:
+- `TrustLean/MicroC/RoundtripExpr.lean`
+- `TrustLean/MicroC/RoundtripStmt.lean`
+- `TrustLean/MicroC/RoundtripMaster.lean`
+
+#### DAG (v3.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N16.1 Expression Roundtrip (all WFExpr) | CRIT | — | completed ✓ |
+| N16.2 Statement Roundtrip (all WFStmt) | CRIT | N16.1 | completed ✓ |
+| N16.3 Master Roundtrip Theorem | CRIT | N16.2 | completed ✓ |
+
+#### Formal Properties (v3.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N16.1 | Expression roundtrip per constructor: WFExpr e -> parse(print(e)) = some e | EQUIVALENCE | P0 |
+| N16.1 | Parser fuel sufficiency: string length sufficient for all WFExpr | INVARIANT | P0 |
+| N16.2 | Statement roundtrip per constructor: WFStmt s -> parse(print(s)) = some s | EQUIVALENCE | P0 |
+| N16.2 | Argument list roundtrip: WF args -> parseArgs(printArgs(args)) = some args | EQUIVALENCE | P1 |
+| N16.3 | Master roundtrip: forall s, WFStmt s -> parseMicroC(microCToString s) = some s | EQUIVALENCE | P0 |
+| N16.3 | Non-vacuity: complex program with all constructors roundtrips | SOUNDNESS | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [x] **Expression Roundtrip**: N16.1 — closed 2026-03-11
+- [x] **Statement Roundtrip**: N16.2 — closed 2026-03-12
+- [x] **Master Roundtrip**: N16.3 — closed 2026-03-12
+
+### v3.0 Integration + Audit
+
+**Contents**: Oracle tests for Int64 wrapping and call evaluation. Non-vacuity witnesses for all gate theorems. Zero sorry audit and spec_audit clean across entire project.
+
+**Files**:
+- `TrustLean/MicroC/Integration_v3.lean`
+
+#### DAG (v3.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N17.1 Oracle Tests + Compatibility | PAR | N14.3, N15.3, N16.3 | completed ✓ |
+| N17.2 Non-Vacuity + Zero Sorry Audit | HOJA | N17.1 | completed ✓ |
+
+#### Formal Properties (v3.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N17.1 | Oracle tests cover Int64 boundary values | SOUNDNESS | P0 |
+| N17.1 | Oracle tests cover call evaluation with arguments | SOUNDNESS | P0 |
+| N17.2 | Zero sorry across entire project | SOUNDNESS | P0 |
+| N17.2 | spec_audit: 0 T1, 0 T1.5 issues | SOUNDNESS | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [x] **Integration + Audit**: N17.1, N17.2 — closed 2026-03-12
+
+---
+
+## Previous Versions
+
+### v2.0.0
+
+### Design Decisions (v2.0.0)
+
+1. **MicroC AST = C-level identifiers (String)**: MicroC uses `String` for variable names (C identifiers). Translation via `varNameToC`. Flat namespace — no shadowing, no nested scopes beyond control flow bodies sharing parent env. De Bruijn / locally-nameless deferred to v3.0 if scoping added.
+2. **No `for_` in MicroC AST**: Desugared to `seq init (while cond (seq body step))` during `stmtToMicroC`. Simplifies evaluator + proofs (only need to handle `while`).
+3. **Functional environment**: `MicroCEnv := String → Value`. Same model as existing `LowLevelEnv` but String-keyed.
+4. **Fuel = depth bound (max composition)**: Same model as `evalStmt`. Composición: `max(s1,s2)` for seq/ite, `n+1 + n*(body+1)` for while.
+5. **No short-circuit `&&`/`||`**: Both operands evaluated. Semantically equivalent for pure expressions (no side effects in MicroC expr sublanguage). Document as v2.0.0 simplification; address in v3.0 if side-effecting expressions added.
+6. **Int = Lean `Int` (unbounded)**: No int64_t wrapping semantics. Overflow deferred to v3.0.
+7. **Full parenthesization (canonical form)**: `microCToString` always parenthesizes binary exprs (like existing `exprToC`). Eliminates precedence ambiguity. Makes grammar LL(1) and roundtrip proof straightforward.
+8. **`Lean.Data.Parsec` built-in**: Zero external dependencies. `ws` after every token for whitespace tolerance. Non-goals: comments, `#include`, preprocessor directives, liberal parsing.
+9. **No pointer arithmetic**: Arrays use abstract indices (same as Trust-Lean Core IR). No heap, no malloc/free.
+10. **Compatibility theorem**: `microCToString(stmtToMicroC stmt) = stmtToC level stmt` — MicroC pipeline produces identical C code to existing backend. **Riskiest theorem** — de-risk with sketch in B4.
+
+### MicroC Foundations
+
+**Contents**: Greenfield MicroC AST (11 stmt + 7 expr constructors, String identifiers), fuel-based evaluator (evalMicroC), and fuel monotonicity gate theorem. Mirrors existing Core IR patterns but operates on C-level identifiers.
+
+**Files**:
+- `TrustLean/MicroC/AST.lean`
+- `TrustLean/MicroC/Eval.lean`
+- `TrustLean/MicroC/FuelMono.lean`
+
+#### DAG (v2.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N10.1 MicroC AST + Properties | FUND | — | completed ✓ |
+| N10.2 MicroC Evaluator | CRIT | N10.1 | completed ✓ |
+| N10.3 evalMicroC_fuel_mono (GATE) | CRIT | N10.2 | completed ✓ |
+
+#### Formal Properties (v2.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N10.1 | MicroCStmt has DecidableEq | INVARIANT | P0 |
+| N10.1 | MicroCExpr has DecidableEq | INVARIANT | P0 |
+| N10.1 | MicroCStmt.size is always positive | INVARIANT | P1 |
+| N10.2 | evalMicroC skip = (env, .normal) | SOUNDNESS | P0 |
+| N10.2 | evalMicroC assign updates exactly one variable | SOUNDNESS | P0 |
+| N10.2 | evalMicroCExpr is deterministic | EQUIVALENCE | P0 |
+| N10.2 | evalMicroC while with false condition terminates normally | SOUNDNESS | P0 |
+| N10.3 | evalMicroC fuel monotonicity: more fuel preserves non-outOfFuel results | SOUNDNESS | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [x] **MicroC AST**: N10.1 — closed 2026-03-10
+- [x] **MicroC Evaluator**: N10.2 — closed 2026-03-10
+- [x] **Fuel Monotonicity Gate**: N10.3 — closed 2026-03-10
+
+### Translation + Simulation
+
+**Contents**: stmtToMicroC translation from Trust-Lean Stmt IR to MicroC AST, microCBridge environment correspondence, and capstone simulation proof: evalStmt env fuel stmt ≡ evalMicroC env' fuel' (stmtToMicroC stmt). Includes compatibility sketch de-risk.
+
+**Files**:
+- `TrustLean/MicroC/Translation.lean`
+- `TrustLean/MicroC/Bridge.lean`
+- `TrustLean/MicroC/Simulation.lean`
+
+#### DAG (v2.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N11.1 stmtToMicroC Translation | PAR | N10.1 | completed ✓ |
+| N11.2 microCBridge + Correspondence | FUND | N10.1 | completed ✓ |
+| N11.3 Simulation Per-Case Lemmas | CRIT | N10.3, N11.1, N11.2 | completed ✓ |
+| N11.4 stmtToMicroC_correct (GATE) | CRIT | N11.3 | completed ✓ |
+
+#### Formal Properties (v2.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N11.1 | stmtToMicroC is total on well-formed Stmt | INVARIANT | P0 |
+| N11.1 | stmtToMicroC preserves structure (seq->seq, ite->ite) | PRESERVATION | P1 |
+| N11.2 | varNameToC is injective (bridge well-defined) | INVARIANT | P0 |
+| N11.2 | microCBridge preserved through environment updates | PRESERVATION | P0 |
+| N11.3 | While loop simulation covers all 6 outcome paths | SOUNDNESS | P0 |
+| N11.4 | stmtToMicroC_correct: evalStmt = evalMicroC . stmtToMicroC | SOUNDNESS | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [ ] **Translation + Bridge**: N11.1, N11.2
+- [x] **Simulation Lemmas**: N11.3 — closed 2026-03-10
+- [x] **Simulation Capstone**: N11.4 — closed 2026-03-10
+
+### Pretty-Printer + Parser + Roundtrip
+
+**Contents**: microCToString pretty-printer (fully parenthesized, canonical form), parseMicroC parser (Lean.Data.Parsec, ws-tolerant), and capstone roundtrip theorem: parseMicroC(microCToString s) = some s. Comments and liberal parsing are explicit non-goals.
+
+**Files**:
+- `TrustLean/MicroC/PrettyPrint.lean`
+- `TrustLean/MicroC/Parser.lean`
+- `TrustLean/MicroC/Roundtrip.lean`
+
+#### DAG (v2.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N12.1 microCToString Pretty-Printer | PAR | N10.1 | completed ✓ |
+| N12.2 parseMicroC Parser | PAR | N10.1 | completed ✓ |
+| N12.3 Expression Roundtrip + Structural Props | CRIT | N12.1, N12.2 | completed ✓ |
+| N12.4 parseMicroC_roundtrip (GATE) | CRIT | N12.3 | completed ✓ |
+
+#### Formal Properties (v2.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N12.1 | microCToString produces balanced braces | INVARIANT | P0 |
+| N12.1 | microCToString produces balanced parentheses | INVARIANT | P0 |
+| N12.1 | microCToString on non-skip produces non-empty string | INVARIANT | P1 |
+| N12.2 | parseMicroC terminates on all inputs | INVARIANT | P0 |
+| N12.3 | parseMicroCExpr(microCExprToString e) = some e | EQUIVALENCE | P0 |
+| N12.4 | parseMicroC(microCToString s) = some s (roundtrip) | EQUIVALENCE | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [x] **Pretty-Printer + Parser**: N12.1, N12.2 — closed 2026-03-10
+- [x] **Expression Roundtrip**: N12.3 — closed 2026-03-11
+- [x] **Statement Roundtrip Capstone**: N12.4 — closed 2026-03-11
+
+### Integration + Audit
+
+**Contents**: End-to-end pipeline wiring (microCToString ∘ stmtToMicroC = stmtToC compatibility theorem), non-vacuity joint witnesses, oracle-style #eval tests, and zero-sorry mechanical audit across all v2.0.0 modules.
+
+**Files**:
+- `TrustLean/MicroC.lean` (root import)
+- `TrustLean/MicroC/Integration.lean` (compatibility + non-vacuity + pipeline tests)
+
+#### DAG (v2.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N13.1 End-to-End Pipeline + Compatibility | HOJA | N11.4, N12.4, N12.1, N11.1 | completed ✓ |
+| N13.2 Non-Vacuity + Oracle Tests | HOJA | N13.1 | completed ✓ |
+| N13.3 Zero Sorry Audit | HOJA | N13.2 | completed ✓ |
+
+#### Formal Properties (v2.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N13.1 | microCToString . stmtToMicroC = stmtToC (compatibility) | EQUIVALENCE | P0 |
+| N13.2 | Non-vacuity: all gate theorem hypotheses are jointly satisfiable | SOUNDNESS | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [x] **Integration + Audit**: N13.1, N13.2, N13.3 — closed 2026-03-11
+
+
+### v1.2.0
 
 ### CBackend Industrial
 
@@ -45,9 +367,6 @@
 - [x] **Properties + Tests**: N9.3, N9.4 — closed 2026-02-21
 - [x] **Zero Sorry Audit**: N9.5 — closed 2026-02-21
 
----
-
-## Previous Versions
 
 ### v1.1.0
 
@@ -353,7 +672,10 @@
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| **v1.1.0** | Feb 2026 | Current: ExpandedSigma → Stmt bridge (amo-lean integration) |
+| **v3.0.0** | Mar 2026 | (in progress) Int64 overflow, call semantics, full inductive roundtrip |
+| **v2.0.0** | Mar 2026 | MicroC verified semantics: 10 modules, 139 decls, 0 sorry. Simulation proof, fuel monotonicity, roundtrip parser, operator compatibility, 10 pipeline oracle tests |
+| **v1.2.0** | Feb 2026 | CBackend industrial: sanitization, aggressive parens, mandatory braces |
+| **v1.1.0** | Feb 2026 | ExpandedSigma → Stmt bridge (amo-lean integration) |
 | **v1.0.0** | Feb 2026 | Core IR (12 constructors) + 3 frontends + 2 backends + pipeline |
 
 

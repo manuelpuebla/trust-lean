@@ -6,3 +6,4 @@ import TrustLean.Pipeline
 import TrustLean.Bridge
 import TrustLean.Tests.Integration
 import TrustLean.Tests.BridgeIntegration
+import TrustLean.MicroC
