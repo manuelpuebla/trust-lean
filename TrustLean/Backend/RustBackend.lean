@@ -40,11 +40,18 @@ def binOpToRust : BinOp → String
   | .ltOp => "<"
   | .land => "&&"
   | .lor => "||"
+  | .band => "&"
+  | .bor => "|"
+  | .bxor => "^"
+  | .bshl => "<<"
+  | .bshr => ">>"
 
 /-- Convert a UnaryOp to the corresponding Rust prefix operator. -/
 def unaryOpToRust : UnaryOp → String
   | .neg => "-"
   | .lnot => "!"
+  | .widen32to64 => "(as i64)"
+  | .trunc64to32 => "(as i32)"
 
 /-! ## Expression Emission -/
 

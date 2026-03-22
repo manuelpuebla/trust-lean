@@ -12,6 +12,8 @@
   - 6 LowLevelExpr constructors including litBool for heterogeneous computation
 -/
 
+import Mathlib.Data.Int.Bitwise
+
 set_option autoImplicit false
 
 namespace TrustLean
@@ -55,7 +57,8 @@ theorem Value.int_ne_bool (n : Int) (b : Bool) : Value.int n ≠ Value.bool b :=
 /-! ## Binary Operations -/
 
 /-- Binary operations in the Core IR.
-    3 arithmetic (Int→Int→Int) + 2 comparison (Int→Int→Bool) + 2 logical (Bool→Bool→Bool). -/
+    3 arithmetic (Int→Int→Int) + 2 comparison (Int→Int→Bool) + 2 logical (Bool→Bool→Bool)
+    + 5 bitwise (Int→Int→Int). -/
 inductive BinOp where
   | add   -- Int → Int → Int
   | sub   -- Int → Int → Int
@@ -64,6 +67,11 @@ inductive BinOp where
   | ltOp  -- Int → Int → Bool
   | land  -- Bool → Bool → Bool
   | lor   -- Bool → Bool → Bool
+  | band  -- Int → Int → Int (bitwise AND)
+  | bor   -- Int → Int → Int (bitwise OR)
+  | bxor  -- Int → Int → Int (bitwise XOR)
+  | bshl  -- Int → Int → Int (left shift, shift amount mod 64)
+  | bshr  -- Int → Int → Int (right shift, shift amount mod 64)
   deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- Evaluate a binary operation. Returns None on type mismatch.
@@ -77,6 +85,11 @@ def evalBinOp : BinOp → Value → Value → Option Value
   | .ltOp, .int a, .int b => some (.bool (decide (a < b)))
   | .land, .bool a, .bool b => some (.bool (a && b))
   | .lor, .bool a, .bool b => some (.bool (a || b))
+  | .band, .int a, .int b => some (.int (Int.land a b))
+  | .bor, .int a, .int b => some (.int (Int.lor a b))
+  | .bxor, .int a, .int b => some (.int (Int.xor a b))
+  | .bshl, .int a, .int b => some (.int (Int.shiftLeft a (b.toNat % 64)))
+  | .bshr, .int a, .int b => some (.int (Int.shiftRight a (b.toNat % 64)))
   | _, _, _ => none
 
 -- @[simp] lemmas for evalBinOp: arithmetic on matching types
@@ -98,6 +111,18 @@ def evalBinOp : BinOp → Value → Value → Option Value
     evalBinOp .land (.bool a) (.bool b) = some (.bool (a && b)) := rfl
 @[simp] theorem evalBinOp_lor (a b : Bool) :
     evalBinOp .lor (.bool a) (.bool b) = some (.bool (a || b)) := rfl
+
+-- @[simp] lemmas for evalBinOp: bitwise
+@[simp] theorem evalBinOp_band (a b : Int) :
+    evalBinOp .band (.int a) (.int b) = some (.int (Int.land a b)) := rfl
+@[simp] theorem evalBinOp_bor (a b : Int) :
+    evalBinOp .bor (.int a) (.int b) = some (.int (Int.lor a b)) := rfl
+@[simp] theorem evalBinOp_bxor (a b : Int) :
+    evalBinOp .bxor (.int a) (.int b) = some (.int (Int.xor a b)) := rfl
+@[simp] theorem evalBinOp_bshl (a b : Int) :
+    evalBinOp .bshl (.int a) (.int b) = some (.int (Int.shiftLeft a (b.toNat % 64))) := rfl
+@[simp] theorem evalBinOp_bshr (a b : Int) :
+    evalBinOp .bshr (.int a) (.int b) = some (.int (Int.shiftRight a (b.toNat % 64))) := rfl
 
 -- @[simp] lemmas for evalBinOp: type mismatch cases
 @[simp] theorem evalBinOp_add_bool_l (b : Bool) (v : Value) :
@@ -121,11 +146,12 @@ def evalBinOp : BinOp → Value → Value → Option Value
 @[simp] theorem evalBinOp_lor_int_r (b : Bool) (n : Int) :
     evalBinOp .lor (.bool b) (.int n) = none := rfl
 
-/-- evalBinOp on matching Int operands always succeeds for arithmetic ops. -/
+/-- evalBinOp on matching Int operands always succeeds for arithmetic/comparison/bitwise ops. -/
 theorem evalBinOp_int_some (op : BinOp) (a b : Int)
-    (h : op = .add ∨ op = .sub ∨ op = .mul ∨ op = .eqOp ∨ op = .ltOp) :
+    (h : op = .add ∨ op = .sub ∨ op = .mul ∨ op = .eqOp ∨ op = .ltOp
+       ∨ op = .band ∨ op = .bor ∨ op = .bxor ∨ op = .bshl ∨ op = .bshr) :
     (evalBinOp op (.int a) (.int b)).isSome = true := by
-  rcases h with rfl | rfl | rfl | rfl | rfl <;> simp [evalBinOp]
+  rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [evalBinOp]
 
 /-- evalBinOp on matching Bool operands always succeeds for logical ops. -/
 theorem evalBinOp_bool_some (op : BinOp) (a b : Bool)
@@ -135,24 +161,36 @@ theorem evalBinOp_bool_some (op : BinOp) (a b : Bool)
 
 /-! ## Unary Operations -/
 
-/-- Unary operations: integer negation and boolean negation. -/
+/-- Unary operations: integer negation, boolean negation, and type casting. -/
 inductive UnaryOp where
-  | neg   -- Int → Int
-  | lnot  -- Bool → Bool
+  | neg          -- Int → Int (arithmetic negation)
+  | lnot         -- Bool → Bool (logical not)
+  | widen32to64  -- Int → Int (zero-extend: keep low 32 bits, identity for valid u32)
+  | trunc64to32  -- Int → Int (truncate: keep low 32 bits)
   deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- Evaluate a unary operation. Returns None on type mismatch. -/
 def evalUnaryOp : UnaryOp → Value → Option Value
   | .neg, .int n => some (.int (-n))
   | .lnot, .bool b => some (.bool (!b))
+  | .widen32to64, .int n => some (.int (n % (2^32 : Int)))
+  | .trunc64to32, .int n => some (.int (n % (2^32 : Int)))
   | _, _ => none
 
 @[simp] theorem evalUnaryOp_neg (n : Int) :
     evalUnaryOp .neg (.int n) = some (.int (-n)) := rfl
 @[simp] theorem evalUnaryOp_lnot (b : Bool) :
     evalUnaryOp .lnot (.bool b) = some (.bool (!b)) := rfl
+@[simp] theorem evalUnaryOp_widen32to64 (n : Int) :
+    evalUnaryOp .widen32to64 (.int n) = some (.int (n % (2^32 : Int))) := rfl
+@[simp] theorem evalUnaryOp_trunc64to32 (n : Int) :
+    evalUnaryOp .trunc64to32 (.int n) = some (.int (n % (2^32 : Int))) := rfl
 @[simp] theorem evalUnaryOp_neg_bool (b : Bool) :
     evalUnaryOp .neg (.bool b) = none := rfl
+@[simp] theorem evalUnaryOp_widen32to64_bool (b : Bool) :
+    evalUnaryOp .widen32to64 (.bool b) = none := rfl
+@[simp] theorem evalUnaryOp_trunc64to32_bool (b : Bool) :
+    evalUnaryOp .trunc64to32 (.bool b) = none := rfl
 @[simp] theorem evalUnaryOp_lnot_int (n : Int) :
     evalUnaryOp .lnot (.int n) = none := rfl
 

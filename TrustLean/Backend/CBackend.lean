@@ -41,11 +41,18 @@ def binOpToC : BinOp → String
   | .ltOp => "<"
   | .land => "&&"
   | .lor => "||"
+  | .band => "&"
+  | .bor => "|"
+  | .bxor => "^"
+  | .bshl => "<<"
+  | .bshr => ">>"
 
 /-- Convert a UnaryOp to the corresponding C prefix operator. -/
 def unaryOpToC : UnaryOp → String
   | .neg => "-"
   | .lnot => "!"
+  | .widen32to64 => "(int64_t)"
+  | .trunc64to32 => "(int32_t)"
 
 /-! ## C-Safe Variable Names (N9.2) -/
 

@@ -39,14 +39,22 @@ def evalMicroCBinOp_int64 (op : MicroCBinOp) (v1 v2 : Value) : Option Value :=
   | .ltOp, .int a, .int b => some (.bool (decide (a < b)))
   | .land, .bool a, .bool b => some (.bool (a && b))
   | .lor, .bool a, .bool b => some (.bool (a || b))
+  | .band, .int a, .int b => some (.int (wrapInt64 (Int.land a b)))
+  | .bor, .int a, .int b => some (.int (wrapInt64 (Int.lor a b)))
+  | .bxor, .int a, .int b => some (.int (wrapInt64 (Int.xor a b)))
+  | .bshl, .int a, .int b => some (.int (wrapInt64 (Int.shiftLeft a (b.toNat % 64))))
+  | .bshr, .int a, .int b => some (.int (wrapInt64 (Int.shiftRight a (b.toNat % 64))))
   | _, _, _ => none
 
 /-- Evaluate a MicroC unary operator with Int64 wrapping.
-    Negation is wrapped via negInt64. Logical not unchanged. -/
+    Negation is wrapped via negInt64. Logical not unchanged.
+    Casting ops wrapped via wrapInt64. -/
 def evalMicroCUnaryOp_int64 (op : MicroCUnaryOp) (v : Value) : Option Value :=
   match op, v with
   | .neg, .int n => some (.int (negInt64 n))
   | .lnot, .bool b => some (.bool (!b))
+  | .widen32to64, .int n => some (.int (wrapInt64 (n % (2^32 : Int))))
+  | .trunc64to32, .int n => some (.int (wrapInt64 (n % (2^32 : Int))))
   | _, _ => none
 
 /-! ## Int64 Operator @[simp] Lemmas -/
@@ -66,10 +74,29 @@ def evalMicroCUnaryOp_int64 (op : MicroCUnaryOp) (v : Value) : Option Value :=
 @[simp] theorem evalMicroCBinOp_int64_lor (a b : Bool) :
     evalMicroCBinOp_int64 .lor (.bool a) (.bool b) = some (.bool (a || b)) := rfl
 
+@[simp] theorem evalMicroCBinOp_int64_band (a b : Int) :
+    evalMicroCBinOp_int64 .band (.int a) (.int b) = some (.int (wrapInt64 (Int.land a b))) := rfl
+@[simp] theorem evalMicroCBinOp_int64_bor (a b : Int) :
+    evalMicroCBinOp_int64 .bor (.int a) (.int b) = some (.int (wrapInt64 (Int.lor a b))) := rfl
+@[simp] theorem evalMicroCBinOp_int64_bxor (a b : Int) :
+    evalMicroCBinOp_int64 .bxor (.int a) (.int b) = some (.int (wrapInt64 (Int.xor a b))) := rfl
+@[simp] theorem evalMicroCBinOp_int64_bshl (a b : Int) :
+    evalMicroCBinOp_int64 .bshl (.int a) (.int b) =
+    some (.int (wrapInt64 (Int.shiftLeft a (b.toNat % 64)))) := rfl
+@[simp] theorem evalMicroCBinOp_int64_bshr (a b : Int) :
+    evalMicroCBinOp_int64 .bshr (.int a) (.int b) =
+    some (.int (wrapInt64 (Int.shiftRight a (b.toNat % 64)))) := rfl
+
 @[simp] theorem evalMicroCUnaryOp_int64_neg (n : Int) :
     evalMicroCUnaryOp_int64 .neg (.int n) = some (.int (negInt64 n)) := rfl
 @[simp] theorem evalMicroCUnaryOp_int64_lnot (b : Bool) :
     evalMicroCUnaryOp_int64 .lnot (.bool b) = some (.bool (!b)) := rfl
+@[simp] theorem evalMicroCUnaryOp_int64_widen32to64 (n : Int) :
+    evalMicroCUnaryOp_int64 .widen32to64 (.int n) =
+    some (.int (wrapInt64 (n % (2^32 : Int)))) := rfl
+@[simp] theorem evalMicroCUnaryOp_int64_trunc64to32 (n : Int) :
+    evalMicroCUnaryOp_int64 .trunc64to32 (.int n) =
+    some (.int (wrapInt64 (n % (2^32 : Int)))) := rfl
 
 /-! ## Int64 Expression Evaluator -/
 

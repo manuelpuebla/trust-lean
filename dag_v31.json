@@ -1,0 +1,248 @@
+{
+  "version": "v3.1.0",
+  "project": "Trust-Lean",
+  "phases": [
+    {
+      "id": "bitwise-casting",
+      "name": "Bitwise + Casting IR Extension",
+      "status": "pending",
+      "nodes": [
+        {
+          "id": "N18.1",
+          "name": "Core IR Extension (BinOp + UnaryOp)",
+          "type": "FUND",
+          "status": "pending",
+          "files": [
+            "TrustLean/Core/Value.lean",
+            "TrustLean/Core/Eval.lean"
+          ],
+          "deps": [],
+          "blocks": ["B11"],
+          "study": {
+            "papers": [],
+            "lessons": ["L-659", "L-275"],
+            "libraries": [],
+            "notes": "Purely additive: 5 BinOp + 2 UnaryOp constructors. Lean exhaustivity catches missing cases everywhere."
+          }
+        },
+        {
+          "id": "N18.2",
+          "name": "MicroC Bitwise/Casting Integration + Agreement",
+          "type": "CRIT",
+          "status": "pending",
+          "files": [
+            "TrustLean/MicroC/AST.lean",
+            "TrustLean/MicroC/Translation.lean",
+            "TrustLean/MicroC/Eval.lean",
+            "TrustLean/MicroC/Int64Eval.lean",
+            "TrustLean/MicroC/Int64Agreement.lean",
+            "TrustLean/Backend/CBackend.lean",
+            "TrustLean/Backend/RustBackend.lean"
+          ],
+          "deps": ["N18.1"],
+          "blocks": ["B12"],
+          "study": {
+            "papers": [],
+            "lessons": ["L-626", "L-630", "L-632", "L-577"],
+            "libraries": [],
+            "notes": "Follow Int64Agreement.lean TEMPLATE. Bitwise agreement is UNCONDITIONAL. Shift amounts: y.toNat % 64."
+          }
+        },
+        {
+          "id": "N18.3",
+          "name": "Roundtrip Extension (PrettyPrint + Parser)",
+          "type": "CRIT",
+          "status": "pending",
+          "files": [
+            "TrustLean/MicroC/PrettyPrint.lean",
+            "TrustLean/MicroC/Parser.lean",
+            "TrustLean/MicroC/RoundtripExpr.lean",
+            "TrustLean/MicroC/RoundtripStmt.lean"
+          ],
+          "deps": ["N18.2"],
+          "blocks": ["B13"],
+          "study": {
+            "papers": [],
+            "lessons": ["L-607", "L-669", "L-670", "L-677"],
+            "libraries": [],
+            "notes": "Extension-only: new match cases. ExprSafe/NoLeading predicates extend automatically. NegLitDisam N/A for bitwise."
+          }
+        },
+        {
+          "id": "N18.4",
+          "name": "Simulation Regression + Smoke Tests",
+          "type": "HOJA",
+          "status": "pending",
+          "files": [
+            "TrustLean/MicroC/Simulation.lean",
+            "TrustLean/MicroC/RoundtripMaster.lean",
+            "TrustLean/MicroC/Integration_v31.lean"
+          ],
+          "deps": ["N18.2", "N18.3"],
+          "blocks": ["B14"],
+          "study": {
+            "papers": [],
+            "lessons": ["L-617"],
+            "libraries": [],
+            "notes": "Verify existing proofs still compile. Add #eval smoke tests for all 7 new ops."
+          }
+        }
+      ],
+      "blocks": [
+        {"id": "B11", "name": "Core IR Extension", "nodes": ["N18.1"], "status": "pending"},
+        {"id": "B12", "name": "MicroC Bitwise + Agreement", "nodes": ["N18.2"], "status": "pending"},
+        {"id": "B13", "name": "Roundtrip Extension", "nodes": ["N18.3"], "status": "pending"},
+        {"id": "B14", "name": "Simulation Regression", "nodes": ["N18.4"], "status": "pending"}
+      ]
+    },
+    {
+      "id": "unsigned-eval",
+      "name": "Unsigned Evaluator (UInt32/UInt64)",
+      "status": "pending",
+      "nodes": [
+        {
+          "id": "N19.1",
+          "name": "Unsigned Wrapping Foundation",
+          "type": "FUND",
+          "status": "pending",
+          "files": [
+            "TrustLean/MicroC/Unsigned.lean"
+          ],
+          "deps": [],
+          "blocks": ["B15"],
+          "study": {
+            "papers": ["verificacion/fiat-crypto-machine-word-arithmetic-erbsen-philipoom-et-al-sp-2019.md"],
+            "lessons": ["L-620", "L-685", "L-688"],
+            "libraries": [],
+            "notes": "wrapWidth w x = x % 2^w (Euclidean, verified non-negative). Int.emod_* lemmas for composition proofs."
+          }
+        },
+        {
+          "id": "N19.2",
+          "name": "Unsigned Evaluator + Fuel Monotonicity",
+          "type": "CRIT",
+          "status": "pending",
+          "files": [
+            "TrustLean/MicroC/UnsignedEval.lean"
+          ],
+          "deps": ["N19.1", "N18.2"],
+          "blocks": ["B16"],
+          "study": {
+            "papers": [],
+            "lessons": ["L-625", "L-647", "L-577", "L-580"],
+            "libraries": [],
+            "notes": "Mirror Int64Eval.lean structure exactly. Fuel mono proof identical (L-625). Dedicated @[simp] lemmas per constructor (L-577)."
+          }
+        },
+        {
+          "id": "N19.3",
+          "name": "Unsigned Agreement + Non-Vacuity",
+          "type": "CRIT",
+          "status": "pending",
+          "files": [
+            "TrustLean/MicroC/UnsignedAgreement.lean"
+          ],
+          "deps": ["N19.2"],
+          "blocks": ["B17"],
+          "study": {
+            "papers": ["verificacion/verification-of-an-optimized-ntt-algorithm-navas-ntt.md"],
+            "lessons": ["L-630", "L-632"],
+            "libraries": ["OptiSat:Pattern.eval_ext"],
+            "notes": "Split: arithmetic CONDITIONAL (InUIntRange), bitwise/comparison/casting UNCONDITIONAL. Template: Int64Agreement.lean."
+          }
+        },
+        {
+          "id": "N19.4",
+          "name": "Unsigned Simulation (Lifting Pattern)",
+          "type": "CRIT",
+          "status": "pending",
+          "files": [
+            "TrustLean/MicroC/UnsignedSimulation.lean"
+          ],
+          "deps": ["N19.3"],
+          "blocks": ["B18"],
+          "study": {
+            "papers": ["verificacion/compcert.md"],
+            "lessons": ["L-657", "L-660", "L-663", "L-655"],
+            "libraries": [],
+            "notes": "Lifting lemma: evalMicroC result => evalMicroC_uint32 result (call-free). Then 3-line composition with stmtToMicroC_correct."
+          }
+        }
+      ],
+      "blocks": [
+        {"id": "B15", "name": "Unsigned Foundation", "nodes": ["N19.1"], "status": "pending"},
+        {"id": "B16", "name": "Unsigned Eval + FuelMono", "nodes": ["N19.2"], "status": "pending"},
+        {"id": "B17", "name": "Unsigned Agreement", "nodes": ["N19.3"], "status": "pending"},
+        {"id": "B18", "name": "Unsigned Simulation", "nodes": ["N19.4"], "status": "pending"}
+      ]
+    },
+    {
+      "id": "plonky3-bridges",
+      "name": "Plonky3 Field Bridges",
+      "status": "pending",
+      "nodes": [
+        {
+          "id": "N20.1",
+          "name": "Mersenne31 Reduce Bridge",
+          "type": "CRIT",
+          "status": "pending",
+          "files": [
+            "TrustLean/Plonky3/Mersenne31Reduce.lean"
+          ],
+          "deps": ["N19.4"],
+          "blocks": ["B19"],
+          "study": {
+            "papers": ["ntt/a-note-on-the-implementation-of-the-number-theoretic-transform-scott-ntt.md"],
+            "lessons": ["L-198", "L-573"],
+            "libraries": ["AMO-Lean:Mersenne31TV.from_u62_val_mod", "AMO-Lean:Mersenne31TV.two_pow_31_mod_p"],
+            "notes": "Per-function refinement: MicroC reduce_mersenne31 = x % (2^31-1). Key identity: 2^31 ≡ 1 (mod P). Uses band + bshr + trunc."
+          }
+        },
+        {
+          "id": "N20.2",
+          "name": "BabyBear Montgomery Reduce Bridge",
+          "type": "CRIT",
+          "status": "pending",
+          "files": [
+            "TrustLean/Plonky3/BabyBearReduce.lean"
+          ],
+          "deps": ["N19.4"],
+          "blocks": ["B19"],
+          "study": {
+            "papers": ["ntt/formally-verified-number-theoretic-transform-trieu-ntt.md"],
+            "lessons": ["L-198", "L-201", "L-202"],
+            "libraries": ["AMO-Lean:Montgomery.monty_reduce_spec", "AMO-Lean:BabyBearTV.bb_monty_roundtrip"],
+            "notes": "Montgomery REDC: t=(x*MU)%R, u=t*P, q=(x-u)/R. Identity: (MU*P+1)%R=0. Uses widen + mul + bshr + trunc."
+          }
+        },
+        {
+          "id": "N20.3",
+          "name": "Integration + Audit + v3.1 Tag",
+          "type": "HOJA",
+          "status": "pending",
+          "files": [
+            "TrustLean/MicroC/Integration_v31.lean"
+          ],
+          "deps": ["N20.1", "N20.2"],
+          "blocks": ["B20"],
+          "study": {
+            "papers": [],
+            "lessons": ["L-617"],
+            "libraries": [],
+            "notes": "Full regression, oracle tests, zero sorry, spec_audit, wiring_check. Tag v3.1.0."
+          }
+        }
+      ],
+      "blocks": [
+        {"id": "B19", "name": "Mersenne31 + BabyBear Bridges", "nodes": ["N20.1", "N20.2"], "status": "pending"},
+        {"id": "B20", "name": "Integration + Audit", "nodes": ["N20.3"], "status": "pending"}
+      ]
+    }
+  ],
+  "meta": {
+    "created": "2026-03-13T12:00:00Z",
+    "updated": "2026-03-13T12:00:00Z",
+    "total_nodes": 11,
+    "completed_nodes": 0
+  }
+}

@@ -1,6 +1,235 @@
 # Trust-Lean: Architecture
 
-## Current Version: v3.0.0
+## Current Version: v3.1.0
+
+### Design Decisions (v3.1.0)
+
+1. **Extension-only architecture (L-659)**: All v3.1 features add NEW files or extend existing constructors. Existing proof structure unchanged. Zero regression risk.
+2. **Value.int with unsigned wrapping (not new Value constructors)**: Keep `Value.int : Int → Value`. Add `wrapWidth w x = x % (2^w : Int)` (Euclidean mod, always non-negative for positive divisor — verified: `(-1) % 2^32 = 4294967295`). Avoids duplicating ~3000 LOC infrastructure.
+3. **wrapWidth as plain function (not typeclass)**: `def wrapWidth (w : Nat) (x : Int) : Int := x % (2^w : Int)`. Abbreviations: `wrapUInt32 := wrapWidth 32`, `wrapUInt64 := wrapWidth 64`. Simpler than typeclass, `Int.emod_*` lemmas apply directly. Sufficient for v3.1 scope (3 widths).
+4. **Bitwise via Lean core Int.land/lor/xor/shiftLeft/shiftRight**: No BitVec refactor (too invasive for v3.1). For unsigned values (≥ 0), Int bitwise = Nat bitwise. Shift amounts reduced mod 64: `let sa := y.toNat % 64; Int.shiftLeft x sa`.
+5. **Agreement split (L-630)**: Bitwise ops (band/bor/bxor/bshl/bshr) have UNCONDITIONAL agreement — they never overflow. Arithmetic (add/sub/mul) has CONDITIONAL agreement guarded by InUIntRange. Casting (widen/trunc) is unconditional.
+6. **Lifting pattern for unsigned simulation (L-657)**: Prove `evalMicroC result => evalMicroC_uint32 result` for call-free programs. Then `stmtToMicroC_correct_uint32 = stmtToMicroC_correct + lift` (3-line composition). Saves ~300 LOC duplication.
+7. **widen32to64 semantics**: `x % 2^32` — truncates to 32 bits then zero-extends. Identity for valid UInt32 values (0 ≤ x < 2^32). Safety net for out-of-range inputs.
+8. **Two-tiered bridge (machine wrapping ≠ field reduction)**: Tier 1 = machine arithmetic in `[0, 2^N)` via `wrapUInt32/64`. Tier 2 = field reduction `x % P` (prime modulus) via per-function refinement proofs. Trust-Lean handles Tier 1; bridge theorems connect to AMO-Lean's Tier 2 specs.
+9. **Plonky3/ directory for field bridges**: Separate from existing Bridge/ (which handles ExpandedSigma). Scalable for Goldilocks in v3.2.
+10. **128-bit (Goldilocks) deferred to v3.2**: Only Mersenne31 (u32/u64) and BabyBear (u32/u64) in v3.1. Goldilocks requires u128 hi/lo splitting.
+11. **Shift amounts reduced mod 64 (documented deviation from C99)**: All evaluators (Int64, UInt32, UInt64) reduce shift amounts via `b.toNat % 64`. For 32-bit programs, shifts ≥ 32 produce DEFINED results (zero for right-shift of non-negative values, large values wrapped for left-shift). C99 makes shifts ≥ width undefined behavior. Our model gives DEFINED semantics to all shift amounts — this is MORE conservative than C99 (we prove more programs correct, never less). Programs with shifts ≥ width are considered well-defined in Trust-Lean's formal model but would be UB in a real C compiler.
+
+### Fase 1: Bitwise + Casting IR Extension
+
+**Contents**: Extends Core IR with 5 bitwise BinOps (band, bor, bxor, bshl, bshr) and 2 casting UnaryOps (widen32to64, trunc64to32). Propagates through MicroC AST, evaluators, backends, parser/printer, and roundtrip proofs. All existing proofs verified via Lean exhaustivity — regression = 0.
+
+**New constructors**:
+```
+BinOp: + band | bor | bxor | bshl | bshr     (7 → 12)
+UnaryOp: + widen32to64 | trunc64to32          (2 → 4)
+```
+
+**Semantics**:
+```
+band  → Int.land a b
+bor   → Int.lor a b
+bxor  → Int.xor a b
+bshl  → Int.shiftLeft a (b.toNat % 64)
+bshr  → Int.shiftRight a (b.toNat % 64)
+widen32to64  → x % 2^32   (zero-extend: identity for valid u32)
+trunc64to32  → x % 2^32   (truncate: keep low 32 bits)
+```
+
+**Files modified**:
+- `TrustLean/Core/Value.lean` — BinOp + UnaryOp constructors
+- `TrustLean/Core/Eval.lean` — evalBinOp + evalUnaryOp cases
+- `TrustLean/MicroC/AST.lean` — MicroCBinOp + MicroCUnaryOp
+- `TrustLean/MicroC/Translation.lean` — bijection extension
+- `TrustLean/MicroC/Eval.lean` — evalMicroCBinOp/UnaryOp
+- `TrustLean/MicroC/Int64Eval.lean` — int64 wrapping for new ops
+- `TrustLean/MicroC/Int64Agreement.lean` — 7 new agreement theorems
+- `TrustLean/MicroC/PrettyPrint.lean` — printer for new ops
+- `TrustLean/MicroC/Parser.lean` — parser for new ops
+- `TrustLean/MicroC/RoundtripExpr.lean` — expression roundtrip extension
+- `TrustLean/MicroC/RoundtripStmt.lean` — statement roundtrip verification
+- `TrustLean/Backend/CBackend.lean` — `"&"`, `"|"`, `"^"`, `"<<"`, `">>"`, `"(int64_t)"`, `"(int32_t)"`
+- `TrustLean/Backend/RustBackend.lean` — Rust equivalents
+
+**Files new**:
+- `TrustLean/MicroC/Integration_v31.lean` — smoke tests + regression
+
+#### DAG (v3.1.0 — Fase 1)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N18.1 Core IR Extension (BinOp + UnaryOp) | FUND | — | pending |
+| N18.2 MicroC Bitwise/Casting Integration + Agreement | CRIT | N18.1 | pending |
+| N18.3 Roundtrip Extension (PrettyPrint + Parser) | CRIT | N18.2 | pending |
+| N18.4 Simulation Regression + Smoke Tests | HOJA | N18.2, N18.3 | pending |
+
+#### Formal Properties (v3.1.0 — Fase 1)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N18.1 | evalBinOp band/bor/bxor returns Int for Int inputs | SOUNDNESS | P0 |
+| N18.1 | evalBinOp bshl/bshr shift amount reduced mod 64 | INVARIANT | P0 |
+| N18.1 | evalUnaryOp widen32to64 is identity for values in [0, 2^32) | EQUIVALENCE | P0 |
+| N18.1 | evalUnaryOp trunc64to32 output always in [0, 2^32) | INVARIANT | P0 |
+| N18.2 | microCBinOpToCore/binOpToMicroC roundtrip for all 12 ops | EQUIVALENCE | P0 |
+| N18.2 | Int64 agreement for bitwise: UNCONDITIONAL (no InInt64Range) | EQUIVALENCE | P0 |
+| N18.2 | Int64 agreement for casting: UNCONDITIONAL | EQUIVALENCE | P0 |
+| N18.3 | Expression roundtrip for all 5 new BinOps + 2 new UnaryOps | EQUIVALENCE | P0 |
+| N18.4 | stmtToMicroC_correct still compiles (0 sorry) | PRESERVATION | P0 |
+| N18.4 | master_roundtrip still compiles (0 sorry) | PRESERVATION | P0 |
+| N18.4 | Smoke: (0xFF & 0x0F) = 0x0F, (8 >> 2) = 2, (3 << 4) = 48 | SOUNDNESS | P0 |
+
+#### Bloques
+
+- [ ] **B11: Core IR Extension**: N18.1
+- [ ] **B12: MicroC Bitwise + Agreement**: N18.2
+- [ ] **B13: Roundtrip Extension**: N18.3
+- [ ] **B14: Simulation Regression**: N18.4
+
+### Fase 2: Unsigned Evaluator (UInt32/UInt64)
+
+**Contents**: Parametric unsigned wrapping via `wrapWidth`. New evaluators `evalMicroC_uint32`/`evalMicroC_uint64` following the Int64Eval template exactly. Fuel monotonicity, agreement theorems, and simulation via lifting pattern.
+
+**Files new**:
+- `TrustLean/MicroC/Unsigned.lean` — wrapWidth, wrapUInt32/64, InUInt32/64Range, properties
+- `TrustLean/MicroC/UnsignedEval.lean` — evalMicroC_uint32/64 + fuel monotonicity
+- `TrustLean/MicroC/UnsignedAgreement.lean` — per-op agreement + non-vacuity
+- `TrustLean/MicroC/UnsignedSimulation.lean` — lifting + simulation composition
+
+**Key definitions**:
+```
+def wrapWidth (w : Nat) (x : Int) : Int := x % (2^w : Int)
+def wrapUInt32 := wrapWidth 32
+def wrapUInt64 := wrapWidth 64
+def InUInt32Range (n : Int) : Prop := 0 ≤ n ∧ n < 2^32
+def InUInt64Range (n : Int) : Prop := 0 ≤ n ∧ n < 2^64
+```
+
+**Key theorems**:
+```
+wrapWidth_nonneg : 0 ≤ wrapWidth w x
+wrapWidth_lt : wrapWidth w x < 2^w
+wrapWidth_idempotent : wrapWidth w (wrapWidth w x) = wrapWidth w x
+wrapWidth_of_inRange : 0 ≤ x → x < 2^w → wrapWidth w x = x
+wrapWidth_add : wrapWidth w (wrapWidth w a + wrapWidth w b) = wrapWidth w (a + b)
+wrapWidth_sub : wrapWidth w (wrapWidth w a - wrapWidth w b) = wrapWidth w (a - b)
+wrapWidth_mul : wrapWidth w (wrapWidth w a * wrapWidth w b) = wrapWidth w (a * b)
+evalMicroC_uint32_fuel_mono : fuel monotonicity for unsigned evaluator
+evalMicroCBinOp_uint32_agree : per-op agreement (conditional/unconditional split)
+stmtToMicroC_correct_uint32 : forward simulation for unsigned programs
+```
+
+#### DAG (v3.1.0 — Fase 2)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N19.1 Unsigned Wrapping Foundation | FUND | — | pending |
+| N19.2 Unsigned Evaluator + Fuel Monotonicity | CRIT | N19.1, N18.2 | pending |
+| N19.3 Unsigned Agreement + Non-Vacuity | CRIT | N19.2 | pending |
+| N19.4 Unsigned Simulation (Lifting Pattern) | CRIT | N19.3 | pending |
+
+#### Formal Properties (v3.1.0 — Fase 2)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N19.1 | wrapWidth w x always in [0, 2^w) | INVARIANT | P0 |
+| N19.1 | wrapWidth idempotent | INVARIANT | P0 |
+| N19.1 | wrapWidth identity on in-range values | EQUIVALENCE | P0 |
+| N19.1 | wrapWidth add/sub/mul composition (via Int.emod_*) | SOUNDNESS | P0 |
+| N19.1 | Non-vacuity: wrapUInt32 boundary examples | SOUNDNESS | P0 |
+| N19.2 | evalMicroC_uint32 fuel monotonicity | SOUNDNESS | P0 |
+| N19.2 | evalMicroC_uint32 skip = (.normal, env) | INVARIANT | P0 |
+| N19.2 | evalMicroC_uint32 wraps at operation boundaries only (L-626) | INVARIANT | P0 |
+| N19.3 | Arithmetic agreement: CONDITIONAL on InUInt32Range | EQUIVALENCE | P0 |
+| N19.3 | Bitwise agreement: UNCONDITIONAL | EQUIVALENCE | P0 |
+| N19.3 | Casting agreement: UNCONDITIONAL | EQUIVALENCE | P0 |
+| N19.3 | Non-vacuity: 8+ examples including overflow and Mersenne-like masking | SOUNDNESS | P0 |
+| N19.4 | Lifting: evalMicroC result => evalMicroC_uint32 result (call-free) | EQUIVALENCE | P0 |
+| N19.4 | stmtToMicroC_correct_uint32: forward simulation for unsigned | SOUNDNESS | P0 |
+| N19.4 | Non-vacuity: end-to-end unsigned program evaluation | SOUNDNESS | P0 |
+
+#### Bloques
+
+- [ ] **B15: Unsigned Foundation**: N19.1
+- [ ] **B16: Unsigned Eval + FuelMono**: N19.2
+- [ ] **B17: Unsigned Agreement**: N19.3
+- [ ] **B18: Unsigned Simulation**: N19.4
+
+### Fase 3: Plonky3 Field Bridges
+
+**Contents**: Per-function refinement proofs connecting MicroC unsigned evaluation to modular arithmetic specs. Mersenne31 reduce via bit-splitting (2^31 ≡ 1 mod P). BabyBear Montgomery reduce via REDC algorithm. Both connect to AMO-Lean's existing `from_u62_val_mod` and `bb_monty_roundtrip` theorems.
+
+**Two-tiered bridge**:
+- **Tier 1 (Trust-Lean)**: Machine wrapping — `evalMicroC_uint32/64` produces values in `[0, 2^N)`
+- **Tier 2 (Bridge theorem)**: Field reduction — output equals `x % P` where P is the prime modulus
+- **Tier 3 (AMO-Lean, external)**: `x % P = (from_u62 x).value.toNat` or `monty_reduce_spec`
+
+**Files new**:
+- `TrustLean/Plonky3/Mersenne31Reduce.lean` — reduce program + correctness
+- `TrustLean/Plonky3/BabyBearReduce.lean` — Montgomery program + correctness
+
+**Mersenne31 Reduce** (models Plonky3's `reduce_64`):
+```c
+// MicroC program:
+lo = x & 0x7FFFFFFF;       // band: low 31 bits
+hi = x >> 31;               // bshr: divide by 2^31
+sum = lo + hi;               // add (may exceed P by 1)
+if (sum >= P) sum = sum - P; // conditional subtract
+result = sum;
+```
+```
+// Correctness: 2^31 ≡ 1 (mod P), so x = lo + hi * 2^31 ≡ lo + hi (mod P)
+theorem reduce_mersenne31_correct (x : Nat) (hx : x < 2^62) :
+    ∃ env', evalMicroC_uint32 fuel env reduce_prog = some (.normal, env')
+      ∧ env' "result" = Value.int (x % (2^31 - 1))
+```
+
+**BabyBear Montgomery Reduce** (models Plonky3's `monty_reduce`):
+```c
+// MicroC program:
+t = (int32_t)(x * MU);            // mul + trunc: (x * MU) % 2^32
+u = (int64_t)t * (int64_t)P;      // widen + mul: t * P in 64-bit
+q = (int32_t)((x - u) >> 32);     // sub + bshr + trunc: (x - u) / R
+if (q >= P) q = q - P;            // conditional subtract
+result = q;
+```
+```
+// Correctness: R * result ≡ x (mod P) where R = 2^32
+theorem monty_reduce_correct (x : Nat) (hx : x < R * P) :
+    ∃ env', evalMicroC_uint64 fuel env monty_prog = some (.normal, env')
+      ∧ (R * (env' "result").getInt) % P = x % P
+```
+
+#### DAG (v3.1.0 — Fase 3)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N20.1 Mersenne31 Reduce Bridge | CRIT | N19.4 | pending |
+| N20.2 BabyBear Montgomery Reduce Bridge | CRIT | N19.4 | pending |
+| N20.3 Integration + Audit + v3.1 Tag | HOJA | N20.1, N20.2 | pending |
+
+#### Formal Properties (v3.1.0 — Fase 3)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N20.1 | reduce_mersenne31_correct: eval output = x % (2^31 - 1) | SOUNDNESS | P0 |
+| N20.1 | Mersenne identity: 2^31 ≡ 1 (mod 2^31 - 1) used in proof | INVARIANT | P0 |
+| N20.1 | Non-vacuity: concrete reduce matching known values | SOUNDNESS | P0 |
+| N20.2 | monty_reduce_correct: R * result ≡ x (mod P) | SOUNDNESS | P0 |
+| N20.2 | Montgomery identity: (MU * P + 1) % R = 0 used in proof | INVARIANT | P0 |
+| N20.2 | Non-vacuity: concrete Montgomery matching bb_monty_roundtrip values | SOUNDNESS | P0 |
+| N20.3 | Zero sorry across entire project | SOUNDNESS | P0 |
+| N20.3 | spec_audit: 0 T1, 0 T1.5 issues | SOUNDNESS | P0 |
+| N20.3 | wiring_check: 0 W1 issues | SOUNDNESS | P0 |
+| N20.3 | Full regression: all v3.0 tests pass | PRESERVATION | P0 |
+
+#### Bloques
+
+- [ ] **B19: Mersenne31 + BabyBear Bridges** (AGENT_TEAM): N20.1, N20.2
+- [ ] **B20: Integration + Audit**: N20.3
+
+---
 
 ### Design Decisions (v3.0.0)
 
@@ -672,7 +901,8 @@
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| **v3.0.0** | Mar 2026 | (in progress) Int64 overflow, call semantics, full inductive roundtrip |
+| **v3.1.0** | Mar 2026 | (planned) UInt32/UInt64 unsigned eval, bitwise ops, type casting, Plonky3 field bridges |
+| **v3.0.0** | Mar 2026 | Int64 overflow, call semantics, full inductive roundtrip |
 | **v2.0.0** | Mar 2026 | MicroC verified semantics: 10 modules, 139 decls, 0 sorry. Simulation proof, fuel monotonicity, roundtrip parser, operator compatibility, 10 pipeline oracle tests |
 | **v1.2.0** | Feb 2026 | CBackend industrial: sanitization, aggressive parens, mandatory braces |
 | **v1.1.0** | Feb 2026 | ExpandedSigma → Stmt bridge (amo-lean integration) |

@@ -31,11 +31,18 @@ def microCBinOpToString : MicroCBinOp → String
   | .ltOp => "<"
   | .land => "&&"
   | .lor => "||"
+  | .band => "&"
+  | .bor => "|"
+  | .bxor => "^"
+  | .bshl => "<<"
+  | .bshr => ">>"
 
 /-- Convert MicroCUnaryOp to its C prefix operator string. -/
 def microCUnaryOpToString : MicroCUnaryOp → String
   | .neg => "-"
   | .lnot => "!"
+  | .widen32to64 => "(int64_t)"
+  | .trunc64to32 => "(int32_t)"
 
 /-! ## microCBinOpToString @[simp] Equation Lemmas -/
 
@@ -46,6 +53,11 @@ def microCUnaryOpToString : MicroCUnaryOp → String
 @[simp] theorem microCBinOpToString_ltOp : microCBinOpToString .ltOp = "<" := rfl
 @[simp] theorem microCBinOpToString_land : microCBinOpToString .land = "&&" := rfl
 @[simp] theorem microCBinOpToString_lor : microCBinOpToString .lor = "||" := rfl
+@[simp] theorem microCBinOpToString_band : microCBinOpToString .band = "&" := rfl
+@[simp] theorem microCBinOpToString_bor : microCBinOpToString .bor = "|" := rfl
+@[simp] theorem microCBinOpToString_bxor : microCBinOpToString .bxor = "^" := rfl
+@[simp] theorem microCBinOpToString_bshl : microCBinOpToString .bshl = "<<" := rfl
+@[simp] theorem microCBinOpToString_bshr : microCBinOpToString .bshr = ">>" := rfl
 
 @[simp] theorem microCUnaryOpToString_neg : microCUnaryOpToString .neg = "-" := rfl
 @[simp] theorem microCUnaryOpToString_lnot : microCUnaryOpToString .lnot = "!" := rfl

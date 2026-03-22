@@ -67,6 +67,45 @@ theorem evalMicroCBinOp_int64_agree_lor (a b : Bool) :
     evalMicroCBinOp .lor (.bool a) (.bool b) := by
   simp [evalMicroCBinOp_int64, evalMicroCBinOp, evalBinOp, microCBinOpToCore]
 
+/-! ### Bitwise: CONDITIONAL on InInt64Range(result) -/
+
+/-- Bitwise AND agrees when result is in Int64 range. -/
+theorem evalMicroCBinOp_int64_agree_band (a b : Int) (h : InInt64Range (Int.land a b)) :
+    evalMicroCBinOp_int64 .band (.int a) (.int b) =
+    evalMicroCBinOp .band (.int a) (.int b) := by
+  simp only [evalMicroCBinOp_int64_band, evalMicroCBinOp, microCBinOpToCore, evalBinOp_band,
+             wrapInt64_of_inRange _ h]
+
+/-- Bitwise OR agrees when result is in Int64 range. -/
+theorem evalMicroCBinOp_int64_agree_bor (a b : Int) (h : InInt64Range (Int.lor a b)) :
+    evalMicroCBinOp_int64 .bor (.int a) (.int b) =
+    evalMicroCBinOp .bor (.int a) (.int b) := by
+  simp only [evalMicroCBinOp_int64_bor, evalMicroCBinOp, microCBinOpToCore, evalBinOp_bor,
+             wrapInt64_of_inRange _ h]
+
+/-- Bitwise XOR agrees when result is in Int64 range. -/
+theorem evalMicroCBinOp_int64_agree_bxor (a b : Int) (h : InInt64Range (Int.xor a b)) :
+    evalMicroCBinOp_int64 .bxor (.int a) (.int b) =
+    evalMicroCBinOp .bxor (.int a) (.int b) := by
+  simp only [evalMicroCBinOp_int64_bxor, evalMicroCBinOp, microCBinOpToCore, evalBinOp_bxor,
+             wrapInt64_of_inRange _ h]
+
+/-- Left shift agrees when result is in Int64 range. -/
+theorem evalMicroCBinOp_int64_agree_bshl (a b : Int)
+    (h : InInt64Range (Int.shiftLeft a (b.toNat % 64))) :
+    evalMicroCBinOp_int64 .bshl (.int a) (.int b) =
+    evalMicroCBinOp .bshl (.int a) (.int b) := by
+  simp only [evalMicroCBinOp_int64_bshl, evalMicroCBinOp, microCBinOpToCore, evalBinOp_bshl,
+             wrapInt64_of_inRange _ h]
+
+/-- Right shift agrees when result is in Int64 range. -/
+theorem evalMicroCBinOp_int64_agree_bshr (a b : Int)
+    (h : InInt64Range (Int.shiftRight a (b.toNat % 64))) :
+    evalMicroCBinOp_int64 .bshr (.int a) (.int b) =
+    evalMicroCBinOp .bshr (.int a) (.int b) := by
+  simp only [evalMicroCBinOp_int64_bshr, evalMicroCBinOp, microCBinOpToCore, evalBinOp_bshr,
+             wrapInt64_of_inRange _ h]
+
 /-! ## General BinOp Agreement -/
 
 /-- General BinOp agreement: if every Int result of the unbounded evaluator

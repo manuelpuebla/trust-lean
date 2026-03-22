@@ -34,12 +34,19 @@ inductive MicroCBinOp where
   | ltOp  -- <
   | land  -- &&
   | lor   -- ||
+  | band  -- & (bitwise AND)
+  | bor   -- | (bitwise OR)
+  | bxor  -- ^ (bitwise XOR)
+  | bshl  -- << (left shift)
+  | bshr  -- >> (right shift)
   deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- MicroC unary operators. -/
 inductive MicroCUnaryOp where
-  | neg   -- - (integer negation)
-  | lnot  -- ! (boolean negation)
+  | neg          -- - (integer negation)
+  | lnot         -- ! (boolean negation)
+  | widen32to64  -- (int64_t) cast (zero-extend)
+  | trunc64to32  -- (int32_t) cast (truncate)
   deriving Repr, BEq, DecidableEq, Inhabited
 
 /-! ## MicroC Expressions -/
@@ -119,11 +126,18 @@ def binOpToMicroC : BinOp → MicroCBinOp
   | .ltOp => .ltOp
   | .land => .land
   | .lor => .lor
+  | .band => .band
+  | .bor => .bor
+  | .bxor => .bxor
+  | .bshl => .bshl
+  | .bshr => .bshr
 
 /-- Convert Trust-Lean UnaryOp to MicroC UnaryOp. -/
 def unaryOpToMicroC : UnaryOp → MicroCUnaryOp
   | .neg => .neg
   | .lnot => .lnot
+  | .widen32to64 => .widen32to64
+  | .trunc64to32 => .trunc64to32
 
 /-- Convert MicroC BinOp back to Trust-Lean BinOp. -/
 def microCBinOpToCore : MicroCBinOp → BinOp
@@ -134,11 +148,18 @@ def microCBinOpToCore : MicroCBinOp → BinOp
   | .ltOp => .ltOp
   | .land => .land
   | .lor => .lor
+  | .band => .band
+  | .bor => .bor
+  | .bxor => .bxor
+  | .bshl => .bshl
+  | .bshr => .bshr
 
 /-- Convert MicroC UnaryOp back to Trust-Lean UnaryOp. -/
 def microCUnaryOpToCore : MicroCUnaryOp → UnaryOp
   | .neg => .neg
   | .lnot => .lnot
+  | .widen32to64 => .widen32to64
+  | .trunc64to32 => .trunc64to32
 
 /-! ## Operator Roundtrip Properties -/
 
