@@ -10,3 +10,7 @@ require mathlib from git
 @[default_target]
 lean_lib «TrustLean» where
   roots := #[`TrustLean]
+
+lean_lib «Tests» where
+  roots := #[`Tests]
+  globs := #[.submodules `Tests]

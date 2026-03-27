@@ -34,6 +34,32 @@ def goldilocks_C : Nat := 4294967295
 /-- Goldilocks P as Int (for MicroC programs). -/
 def goldilocks_P_int : Int := 18446744069414584321
 
+/-! ## Goldilocks Constant Theorems -/
+
+/-- P = 2^64 - 2^32 + 1 as a formula. -/
+theorem goldilocks_P_formula : goldilocks_P = 2^64 - 2^32 + 1 := by native_decide
+
+/-- P value: 18446744069414584321. -/
+theorem goldilocks_P_val : goldilocks_P = 18446744069414584321 := by native_decide
+
+/-- C = 2^32 - 1 as a formula. -/
+theorem goldilocks_C_formula : goldilocks_C = 2^32 - 1 := by native_decide
+
+/-- C value: 4294967295. -/
+theorem goldilocks_C_val : goldilocks_C = 4294967295 := by native_decide
+
+/-- P_int equals P (Int vs Nat consistency). -/
+theorem goldilocks_P_int_val : goldilocks_P_int = 18446744069414584321 := by native_decide
+
+/-- P_int equals goldilocks_P when cast to Int. -/
+theorem goldilocks_P_int_eq_P : goldilocks_P_int = (goldilocks_P : Int) := by native_decide
+
+/-- C^2 < P: ensures second fold product stays within bounds. -/
+theorem goldilocks_C_sq_lt_P : goldilocks_C * goldilocks_C < goldilocks_P := by native_decide
+
+/-- Pseudo-Mersenne identity: 2^64 mod P = C. -/
+theorem goldilocks_pseudo_mersenne : 2^64 % goldilocks_P = goldilocks_C := by native_decide
+
 /-! ## Goldilocks Identity Verification -/
 
 /-- P = 2^64 - 2^32 + 1 -/

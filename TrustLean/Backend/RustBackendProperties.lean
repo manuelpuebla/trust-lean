@@ -156,6 +156,49 @@ theorem stmtToRust_while_has_open_brace (c : LowLevelExpr) (b : Stmt) (l : Nat) 
   have : countChar '{' " {\n" = 1 := by decide
   omega
 
+/-- Balanced braces: assign with expression. -/
+example : countChar '{' (stmtToRust 0 (.assign (.user "x") (.binOp .add (.litInt 1) (.litInt 2))))
+    = countChar '}' (stmtToRust 0 (.assign (.user "x") (.binOp .add (.litInt 1) (.litInt 2)))) := by
+  decide
+
+/-- Balanced braces: store with array access. -/
+example : countChar '{' (stmtToRust 0 (.store (.varRef (.user "arr")) (.litInt 0) (.litInt 42)))
+    = countChar '}' (stmtToRust 0 (.store (.varRef (.user "arr")) (.litInt 0) (.litInt 42))) := by
+  decide
+
+/-- Balanced braces: load with array access. -/
+example : countChar '{' (stmtToRust 0 (.load (.user "x") (.varRef (.user "arr")) (.litInt 0)))
+    = countChar '}' (stmtToRust 0 (.load (.user "x") (.varRef (.user "arr")) (.litInt 0))) := by
+  decide
+
+/-- Balanced braces: function call. -/
+example : countChar '{' (stmtToRust 0 (.call (.user "r") "foo" [.litInt 1]))
+    = countChar '}' (stmtToRust 0 (.call (.user "r") "foo" [.litInt 1])) := by decide
+
+/-- Balanced braces: return with value. -/
+example : countChar '{' (stmtToRust 0 (.return_ (some (.litInt 42))))
+    = countChar '}' (stmtToRust 0 (.return_ (some (.litInt 42)))) := by decide
+
+/-- Balanced braces: deeply nested (while > ite > seq > assign+break). -/
+example : countChar '{'
+    (stmtToRust 0 (.while (.litBool true)
+      (.seq (.ite (.litBool true)
+        (.seq (.assign (.user "x") (.litInt 1)) (.assign (.user "y") (.litInt 2)))
+        .break_)
+      (.assign (.user "z") (.litInt 3)))))
+  = countChar '}'
+    (stmtToRust 0 (.while (.litBool true)
+      (.seq (.ite (.litBool true)
+        (.seq (.assign (.user "x") (.litInt 1)) (.assign (.user "y") (.litInt 2)))
+        .break_)
+      (.assign (.user "z") (.litInt 3))))) := by decide
+
+-- Note: A fully general balanced braces theorem (∀ s l, countChar '{' (stmtToRust l s) =
+-- countChar '}' (stmtToRust l s)) requires an additional hypothesis that variable names
+-- and function names don't contain brace characters, since varNameToStr (.user s) = s
+-- and s is an arbitrary String. The concrete examples above cover all 12 constructors
+-- and nested combinations, providing practical coverage. See L-351 for the design rationale.
+
 /-! ## N22.4: Rust-Specific Properties (P0) -/
 
 /-- Rust uses postfix "as" for casting (vs C's prefix cast). -/

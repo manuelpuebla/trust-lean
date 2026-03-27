@@ -237,6 +237,28 @@ theorem countChar_append (c : Char) (s1 s2 : String) :
   unfold countChar
   rw [String.toList_append, List.countP_append]
 
+/-- countChar is additive over joinCode for non-newline characters. -/
+private theorem isEmpty_eq_empty {s : String} (h : s.isEmpty = true) : s = "" := by
+  simp [String.isEmpty] at h; exact h
+
+theorem countChar_joinCode (c : Char) (s1 s2 : String) (hc : c ≠ '\n') :
+    countChar c (joinCode s1 s2) = countChar c s1 + countChar c s2 := by
+  unfold joinCode
+  split
+  · -- s1 empty
+    rename_i h; rw [isEmpty_eq_empty h]; simp [countChar_empty]
+  · split
+    · -- s2 empty
+      rename_i _ h; rw [isEmpty_eq_empty h]; simp [countChar_empty]
+    · -- both non-empty: s1 ++ "\n" ++ s2
+      rw [countChar_append, countChar_append]
+      have : countChar c "\n" = 0 := by
+        unfold countChar
+        have htl : "\n".toList = ['\n'] := by native_decide
+        rw [htl, List.countP_cons, List.countP_nil]
+        simp [beq_iff_eq, Ne.symm hc]
+      omega
+
 /-! ## Rust Keyword Infrastructure (N21.1)
     Source: Rust 2021 edition, The Rust Reference §2.1 (Keywords) -/
 

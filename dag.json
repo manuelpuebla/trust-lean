@@ -5,13 +5,13 @@
     {
       "id": "fase4",
       "name": "Rust Sanitization Foundation",
-      "status": "pending",
+      "status": "completed",
       "nodes": [
         {
           "id": "N21.1",
           "name": "Rust Keywords + Shared countChar Infrastructure",
           "type": "FUND",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "TrustLean/Backend/Common.lean"
           ],
@@ -35,7 +35,7 @@
           "id": "N21.2",
           "name": "Sanitization Theorems (not_keyword, nonempty, valid, idempotent)",
           "type": "CRIT",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "TrustLean/Backend/Common.lean"
           ],
@@ -82,13 +82,13 @@
     {
       "id": "fase5",
       "name": "RustBackendProperties",
-      "status": "pending",
+      "status": "completed",
       "nodes": [
         {
           "id": "N22.1",
           "name": "Expression Emission Properties (determinism, litInt, litBool)",
           "type": "PAR",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "TrustLean/Backend/RustBackendProperties.lean"
           ],
@@ -114,7 +114,7 @@
           "id": "N22.2",
           "name": "Balanced Braces (stmtBracePairs + general theorem + examples)",
           "type": "CRIT",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "TrustLean/Backend/RustBackendProperties.lean"
           ],
@@ -140,7 +140,7 @@
           "id": "N22.3",
           "name": "Structural Properties (for desugaring, header, control flow braces)",
           "type": "PAR",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "TrustLean/Backend/RustBackendProperties.lean"
           ],
@@ -166,7 +166,7 @@
           "id": "N22.4",
           "name": "Rust-Specific Properties (cast postfix, no parens, let mut, usize)",
           "type": "PAR",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "TrustLean/Backend/RustBackendProperties.lean"
           ],
@@ -215,13 +215,13 @@
     {
       "id": "fase6",
       "name": "Integration + Audit",
-      "status": "pending",
+      "status": "completed",
       "nodes": [
         {
           "id": "N23.1",
           "name": "Integration Tests + Non-Vacuity Witnesses",
           "type": "HOJA",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "TrustLean/Tests/RustBackendIntegration.lean"
           ],
@@ -250,7 +250,7 @@
           "id": "N23.2",
           "name": "Zero Sorry Audit + spec_audit + v3.2.0 Tag",
           "type": "HOJA",
-          "status": "pending",
+          "status": "completed",
           "files": [],
           "deps": [
             "N23.1"

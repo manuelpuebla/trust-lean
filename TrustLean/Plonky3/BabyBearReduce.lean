@@ -34,6 +34,39 @@ def babyBear_MU : Int := 2281701377
 /-- Montgomery MU_NEG = (-P^(-1)) mod R -/
 def babyBear_MU_NEG : Int := 2013265919
 
+/-! ## BabyBear Constant Theorems -/
+
+/-- P = 2013265921 (BabyBear prime value). -/
+theorem babyBear_P_val : babyBear_P = 2013265921 := by native_decide
+
+/-- P = 15 * 2^27 + 1 (structural decomposition). -/
+theorem babyBear_P_formula : babyBear_P = 15 * 2^27 + 1 := by native_decide
+
+/-- P = 2^31 - 2^27 + 1 (alternative formula). -/
+theorem babyBear_P_formula2 : babyBear_P = 2^31 - 2^27 + 1 := by native_decide
+
+/-- R = 2^32 (Montgomery radix). -/
+theorem babyBear_R_val : babyBear_R = 4294967296 := by native_decide
+
+/-- R = 2^32 as a formula. -/
+theorem babyBear_R_formula : babyBear_R = 2^32 := by native_decide
+
+/-- MU is the modular inverse of P mod R: (MU * P) % R = 1. -/
+theorem babyBear_MU_inverse : (babyBear_MU * babyBear_P) % babyBear_R = 1 := by native_decide
+
+/-- MU value: 2281701377. -/
+theorem babyBear_MU_val : babyBear_MU = 2281701377 := by native_decide
+
+/-- MU + MU_NEG = R (they are complementary mod R). -/
+theorem babyBear_MU_complement : babyBear_MU + babyBear_MU_NEG = babyBear_R := by native_decide
+
+/-- MU_NEG value: 2013265919. -/
+theorem babyBear_MU_NEG_val : babyBear_MU_NEG = 2013265919 := by native_decide
+
+/-- MU_NEG is the negated inverse: (MU_NEG * P + 1) % R = 0. -/
+theorem babyBear_MU_NEG_identity :
+    (babyBear_MU_NEG * babyBear_P + 1) % babyBear_R = 0 := by native_decide
+
 /-! ## Montgomery Identity Verification -/
 
 /-- Key Montgomery identity: (MU_NEG * P + 1) % R = 0 -/
@@ -167,6 +200,12 @@ example : (42 * babyBear_R) % babyBear_P = (babyBear_R * 42) % babyBear_P := by
 
 /-- to_monty(a) = (a * R) % P -/
 def to_monty (a : Int) : Int := (a * babyBear_R) % babyBear_P
+
+/-- to_monty(0) = 0 (zero maps to zero in Montgomery form). -/
+theorem to_monty_zero : to_monty 0 = 0 := by native_decide
+
+/-- to_monty(1) = R % P (one maps to R mod P in Montgomery form). -/
+theorem to_monty_one : to_monty 1 = babyBear_R % babyBear_P := by native_decide
 
 -- from_monty via monty_reduce: takes Montgomery form back to normal
 -- We test the full roundtrip: to_monty → monty_mul → from_monty

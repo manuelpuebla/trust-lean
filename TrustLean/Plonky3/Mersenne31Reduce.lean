@@ -27,6 +27,23 @@ def mersenne31_P : Int := 2^31 - 1
 /-- Mersenne31 mask: low 31 bits -/
 def mersenne31_mask : Int := 0x7FFFFFFF
 
+/-! ## Mersenne31 Constant Theorems -/
+
+/-- P = 2^31 - 1 (Mersenne prime identity). -/
+theorem mersenne31_P_val : mersenne31_P = 2147483647 := by native_decide
+
+/-- P equals 2^31 - 1 as a formula. -/
+theorem mersenne31_P_formula : mersenne31_P = 2^31 - 1 := by native_decide
+
+/-- The mask equals P (both are 2^31 - 1). -/
+theorem mersenne31_mask_val : mersenne31_mask = 2147483647 := by native_decide
+
+/-- The mask equals 2^31 - 1 as a formula. -/
+theorem mersenne31_mask_formula : mersenne31_mask = 2^31 - 1 := by native_decide
+
+/-- The mask and P are identical. -/
+theorem mersenne31_mask_eq_P : mersenne31_mask = mersenne31_P := by native_decide
+
 /-! ## Mersenne31 Reduce Program -/
 
 /-- MicroC program for Mersenne31 single-round reduction.

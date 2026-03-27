@@ -533,4 +533,9 @@ theorem stmtToMicroC_correct
             have := Option.some.inj heval; exact (congrArg Prod.fst this).symm
           exact absurd this hoc
 
+/-! ## WellFormedArrayBases: key fact (autopsy fix) -/
+
+/-- "mem" is already a valid C identifier (sanitizeIdentifier is identity). -/
+theorem sanitizeIdentifier_mem : sanitizeIdentifier "mem" = "mem" := by native_decide
+
 end TrustLean

@@ -14,6 +14,7 @@ import TrustLean.Bridge.Semantics
 import TrustLean.Bridge.ExprTranslation
 import TrustLean.Core.Eval
 import TrustLean.Core.Foundation
+import TrustLean.MicroC.Simulation
 
 set_option autoImplicit false
 
@@ -113,5 +114,39 @@ theorem store_mem_correct
       (.int (sEnv v))) := by
   simp [evalStmt_store, getArrayName_memBaseExpr,
         addrExpr_correct lEnv llEnv hLoop baseAddr stride offset, hScalar v]
+
+/-! ## WellFormedArrayBases for gather/scatter (autopsy fix) -/
+
+open TrustLean in
+/-- memBaseExpr is well-formed (its name "mem" is already a valid C identifier). -/
+theorem wellFormedBase_memBaseExpr : TrustLean.WellFormedBase memBaseExpr := by
+  unfold TrustLean.WellFormedBase memBaseExpr memArrayName
+  exact TrustLean.sanitizeIdentifier_mem
+
+open TrustLean in
+/-- gatherToStmt always produces well-formed array bases
+    (all loads use memBaseExpr which is well-formed). -/
+theorem gatherToStmt_wfArrayBases (vars : List ScalarVar) (g : Gather) :
+    TrustLean.WellFormedArrayBases (gatherToStmt vars g) := by
+  unfold gatherToStmt
+  suffices h : ∀ n, TrustLean.WellFormedArrayBases (gatherToStmt.go g vars n) from h 0
+  intro n; induction vars generalizing n with
+  | nil => simp [gatherToStmt.go, TrustLean.WellFormedArrayBases]
+  | cons v rest ih =>
+    simp only [gatherToStmt.go, TrustLean.WellFormedArrayBases]
+    exact ⟨wellFormedBase_memBaseExpr, ih (n + 1)⟩
+
+open TrustLean in
+/-- scatterToStmt always produces well-formed array bases
+    (all stores use memBaseExpr which is well-formed). -/
+theorem scatterToStmt_wfArrayBases (vars : List ScalarVar) (s : Scatter) :
+    TrustLean.WellFormedArrayBases (scatterToStmt vars s) := by
+  unfold scatterToStmt
+  suffices h : ∀ n, TrustLean.WellFormedArrayBases (scatterToStmt.go s vars n) from h 0
+  intro n; induction vars generalizing n with
+  | nil => simp [scatterToStmt.go, TrustLean.WellFormedArrayBases]
+  | cons v rest ih =>
+    simp only [scatterToStmt.go, TrustLean.WellFormedArrayBases]
+    exact ⟨wellFormedBase_memBaseExpr, ih (n + 1)⟩
 
 end TrustLean.Bridge

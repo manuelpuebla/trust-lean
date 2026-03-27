@@ -1,6 +1,6 @@
 ═══ Specification Audit: Trust-Lean ═══
-Theorems: 304  Lemmas: 0  Pipeline: 59
-Clean: 266  T1(vacuity): 0  T1.5(identity): 0  T2(weak): 0  T3(structural): 13  T4(no-witness): 25
+Theorems: 360  Lemmas: 0  Pipeline: 62
+Clean: 318  T1(vacuity): 0  T1.5(identity): 0  T2(weak): 0  T3(structural): 13  T4(no-witness): 29
 
 ── TIER 3 — STRUCTURAL (13 issues) ──
   theorem scalarAssignToStmt_scalarBridge [PIPELINE]
@@ -55,7 +55,7 @@ Clean: 266  T1(vacuity): 0  T1.5(identity): 0  T2(weak): 0  T3(structural): 13  
     TrustLean/MicroC/Bridge.lean:37
     ⚠ T3-DIRECTION: name suggests equivalence but conclusion is unidirectional (→ not ↔)
 
-── TIER 4 — NO WITNESS (25 issues) ──
+── TIER 4 — NO WITNESS (29 issues) ──
   theorem gatherToStmt_go_correct [PIPELINE]
     TrustLean/Bridge/Correctness.lean:89
     ⚠ T3-MANY-HYPOTHESES: 10 hypotheses on pipeline theorem — verify each is satisfiable and necessary
@@ -158,6 +158,22 @@ Clean: 266  T1(vacuity): 0  T1.5(identity): 0  T2(weak): 0  T3(structural): 13  
   theorem stmtToMicroC_correct [PIPELINE]
     TrustLean/MicroC/Simulation.lean:209
     ⚠ T4-NO-WITNESS: 5 Prop hypotheses [pipeline, threshold=2] but no non-vacuity example found in Tests/NonVacuity*.lean or same file
+
+  theorem fuel_mono_seq_uint32
+    TrustLean/MicroC/UnsignedFuelMono.lean:55
+    ⚠ T4-NO-WITNESS: 3 Prop hypotheses but no non-vacuity example found in Tests/NonVacuity*.lean or same file
+
+  theorem evalMicroC_uint32_fuel_mono_full
+    TrustLean/MicroC/UnsignedFuelMono.lean:185
+    ⚠ T4-NO-WITNESS: 3 Prop hypotheses but no non-vacuity example found in Tests/NonVacuity*.lean or same file
+
+  theorem fuel_mono_seq_uint64
+    TrustLean/MicroC/UnsignedFuelMono.lean:241
+    ⚠ T4-NO-WITNESS: 3 Prop hypotheses but no non-vacuity example found in Tests/NonVacuity*.lean or same file
+
+  theorem evalMicroC_uint64_fuel_mono_full
+    TrustLean/MicroC/UnsignedFuelMono.lean:371
+    ⚠ T4-NO-WITNESS: 3 Prop hypotheses but no non-vacuity example found in Tests/NonVacuity*.lean or same file
 
   theorem Pipeline.sound [PIPELINE]
     TrustLean/Pipeline.lean:53
