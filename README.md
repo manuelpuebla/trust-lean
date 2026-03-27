@@ -2,8 +2,8 @@
 
 [![Lean 4](https://img.shields.io/badge/Lean-4.26.0-blue.svg)](https://leanprover.github.io/lean4/doc/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/Tests-402%2B-green.svg)](#performance)
-[![Build](https://img.shields.io/badge/Build-90%20jobs-brightgreen.svg)](#quick-start)
+[![Tests](https://img.shields.io/badge/Tests-410%2B-green.svg)](#performance)
+[![Build](https://img.shields.io/badge/Build-632%20jobs-brightgreen.svg)](#quick-start)
 
 ## What is Trust-Lean?
 
@@ -11,7 +11,7 @@
 
 The core value proposition: **define your DSL semantics in Lean 4, implement the `CodeGenerable` + `CodeGenSound` typeclasses, and get verified C or Rust code** — the framework handles compilation, backend emission, and proof obligations. Zero sorry, zero axioms — the kernel checks everything.
 
-Trust-Lean currently supports three frontends (ArithExpr, BoolExpr, ImpStmt), two backends (C, Rust), and a bridge from AMO-Lean's `ExpandedSigma` IR for integration with verified optimization pipelines.
+Trust-Lean currently supports three frontends (ArithExpr, BoolExpr, ImpStmt), two backends (C, Rust), a MicroC formal C99 subset with roundtrip parser, Int64/UInt32/UInt64 evaluators with agreement proofs, function call semantics, bitwise/casting operations, and Plonky3 field reduction bridges (Mersenne31, BabyBear, KoalaBear, Goldilocks).
 
 ## Ecosystem & Comparisons
 
@@ -140,34 +140,34 @@ def cCode := generateCFunction defaultCConfig "compute"
 
 | Metric | Value |
 |--------|-------|
-| Lines of Code | 7,429 |
-| Theorems | 312 |
-| @[simp] lemmas | 201 |
+| Lines of Code | 15,237 |
+| Theorems + lemmas | 839 |
+| @[simp] lemmas | 419 |
 | Sorry | **0** |
 | Axioms | **0** |
-| Property checks | 286 PASS (2 NOT_RUNNABLE) |
-| Integration tests | 116 PASS |
-| Build | 90 jobs |
+| Tests (#eval / example) | 410+ |
+| Build | 632 jobs |
 
 See [BENCHMARKS.md](BENCHMARKS.md) for full verification criteria and results. See [TESTS_POST.md](TESTS_POST.md) for adversarial post-hoc testing report.
 
-## What's New in v1.2.0
+## What's New in v3.1.0
 
-### Changes Since v1.1.0
+### Changes Since v3.0.0
 
-| Metric | v1.1.0 | v1.2.0 | Change |
+| Metric | v3.0.0 | v3.1.0 | Change |
 |--------|--------|--------|--------|
-| **Lines of Code** | ~6,200 | **~7,429** | +1,229 LOC |
-| **Theorems** | ~260 | **312** | +52 |
+| **Lines of Code** | ~11,200 | **15,237** | +4,037 LOC |
+| **Theorems + lemmas** | ~550 | **839** | +289 |
 | **Sorry** | 0 | **0** | Same |
 | **Axioms** | 0 | **0** | Same |
+| **Build** | ~430 jobs | **632 jobs** | +202 |
 
-### Key Achievements (v1.1.0 -> v1.2.0)
+### Key Achievements (v3.0.0 -> v3.1.0)
 
-1. **Industrial C Backend** — sanitized identifiers (idempotent, keyword-safe, valid C identifier invariant), balanced braces on all 12 constructors, auto-generated headers
-2. **Formal CBackend properties** (`CBackendProperties.lean`) — 34 theorems covering balanced braces, determinism, operator precedence
-3. **Post-hoc adversarial testing** — 286 property checks + 116 integration tests, all PASS
-4. **Zero sorry audit** — confirmed 0 sorry across all 40 source files
+1. **Bitwise + Casting IR Extension** — 5 new BinOps (band, bor, bxor, bshl, bshr) + 2 UnaryOps (widen32to64, trunc64to32) propagated through all layers
+2. **Unsigned Evaluators** — `evalMicroC_uint32`/`evalMicroC_uint64` with `wrapWidth` foundation, fuel monotonicity, conditional/unconditional agreement split, and lifting-based simulation
+3. **Plonky3 Field Bridges** — Mersenne31 reduce (bit-splitting), BabyBear Montgomery reduce (REDC), KoalaBear reduce, Goldilocks reduce — verified field reduction programs
+4. **Int64 Agreement for bitwise** — 7 new unconditional agreement theorems (bitwise ops never overflow)
 
 ### Version History
 
@@ -175,31 +175,23 @@ See [BENCHMARKS.md](BENCHMARKS.md) for full verification criteria and results. S
 v1.0.0 (Feb 20)    0 axioms    0 sorry    Core IR + 3 frontends + 2 backends + pipeline
 v1.1.0 (Feb 21)    0 axioms    0 sorry    AMO-Lean bridge (ExpandedSigma -> Stmt)
 v1.2.0 (Feb 21)    0 axioms    0 sorry    Industrial CBackend + formal properties
+v2.0.0 (Mar 10)    0 axioms    0 sorry    MicroC: AST, evaluator, simulation, roundtrip
+v3.0.0 (Mar 12)    0 axioms    0 sorry    Int64 overflow, call semantics, full inductive roundtrip
+v3.1.0 (Mar 22)    0 axioms    0 sorry    Bitwise ops, unsigned MicroC, Plonky3 reductions
 ```
 
-## v2.0.0 Roadmap: MicroC Verified Semantics + Roundtrip Parser
-
-Trust-Lean v2.0.0 extends the framework with **MicroC**: a formal C99 subset with ~20 AST nodes, fuel-based semantics, a simulation proof, and a roundtrip parser theorem. This closes the formal chain from mathematics to C code.
-
-| Fase | Contents | Key Theorem | Status |
-|------|----------|-------------|--------|
-| **Fase 9**: MicroC Foundations | AST, evalMicroC, fuel mono | `evalMicroC_fuel_mono` | Planned |
-| **Fase 10**: Translation + Simulation | stmtToMicroC, bridge, sim proof | `stmtToMicroC_correct` | Planned |
-| **Fase 11**: Roundtrip | pretty-printer, parser, roundtrip | `parseMicroC_roundtrip` | Planned |
-| **Fase 12**: Integration | compatibility, tests, audit | `microCToString ∘ stmtToMicroC = stmtToC` | Planned |
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full DAG and design decisions.
-
-## Future Work (v3.0+)
+## Future Work (v4.0+)
 
 | Task | Relevance | Difficulty | Status |
 |------|-----------|------------|--------|
-| **int64_t overflow semantics** | High — wrapping arithmetic for C faithfulness | High | Planned (v3.0) |
-| **Short-circuit &&/\|\|** | Medium — needed for side-effecting expressions | Medium | Planned (v3.0) |
+| **Goldilocks 128-bit (u128 hi/lo)** | High — Plonky3 field requiring 128-bit splitting | High | Designed (v3.2) |
+| **Short-circuit &&/\|\|** | Medium — needed for side-effecting expressions | Medium | Planned |
 | **RustBackend formal properties** | Medium — CBackend has 34 theorems, Rust has 4 | Low | Designed |
 | **Optimization passes** | High — constant folding, dead code elimination | High | Planned |
 | **LLVM/WebAssembly backends** | Medium — extends target coverage | Medium | Planned |
 | **Parallelism support** | Medium — `.par` currently interpreted as `.seq` | High | Deferred |
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full DAG and design decisions.
 
 ## Relationship to Other Projects
 
@@ -219,4 +211,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**Trust-Lean v1.2.0** — Every compilation step is a theorem. v2.0.0 planned: MicroC verified C semantics + roundtrip parser.
+**Trust-Lean v3.1.0** — Every compilation step is a theorem. 839 theorems, 0 sorry, 0 axioms.

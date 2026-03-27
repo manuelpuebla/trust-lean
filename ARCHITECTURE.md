@@ -59,10 +59,10 @@ trunc64to32  → x % 2^32   (truncate: keep low 32 bits)
 
 | Nodo | Tipo | Deps | Status |
 |------|------|------|--------|
-| N18.1 Core IR Extension (BinOp + UnaryOp) | FUND | — | pending |
-| N18.2 MicroC Bitwise/Casting Integration + Agreement | CRIT | N18.1 | pending |
-| N18.3 Roundtrip Extension (PrettyPrint + Parser) | CRIT | N18.2 | pending |
-| N18.4 Simulation Regression + Smoke Tests | HOJA | N18.2, N18.3 | pending |
+| N18.1 Core IR Extension (BinOp + UnaryOp) | FUND | — | completed ✓ |
+| N18.2 MicroC Bitwise/Casting Integration + Agreement | CRIT | N18.1 | completed ✓ |
+| N18.3 Roundtrip Extension (PrettyPrint + Parser) | CRIT | N18.2 | completed ✓ |
+| N18.4 Simulation Regression + Smoke Tests | HOJA | N18.2, N18.3 | completed ✓ |
 
 #### Formal Properties (v3.1.0 — Fase 1)
 
@@ -82,10 +82,10 @@ trunc64to32  → x % 2^32   (truncate: keep low 32 bits)
 
 #### Bloques
 
-- [ ] **B11: Core IR Extension**: N18.1
-- [ ] **B12: MicroC Bitwise + Agreement**: N18.2
-- [ ] **B13: Roundtrip Extension**: N18.3
-- [ ] **B14: Simulation Regression**: N18.4
+- [x] **B11: Core IR Extension**: N18.1 — closed 2026-03-22
+- [x] **B12: MicroC Bitwise + Agreement**: N18.2 — closed 2026-03-22
+- [x] **B13: Roundtrip Extension**: N18.3 — closed 2026-03-22
+- [x] **B14: Simulation Regression**: N18.4 — closed 2026-03-22
 
 ### Fase 2: Unsigned Evaluator (UInt32/UInt64)
 
@@ -124,10 +124,10 @@ stmtToMicroC_correct_uint32 : forward simulation for unsigned programs
 
 | Nodo | Tipo | Deps | Status |
 |------|------|------|--------|
-| N19.1 Unsigned Wrapping Foundation | FUND | — | pending |
-| N19.2 Unsigned Evaluator + Fuel Monotonicity | CRIT | N19.1, N18.2 | pending |
-| N19.3 Unsigned Agreement + Non-Vacuity | CRIT | N19.2 | pending |
-| N19.4 Unsigned Simulation (Lifting Pattern) | CRIT | N19.3 | pending |
+| N19.1 Unsigned Wrapping Foundation | FUND | — | completed ✓ |
+| N19.2 Unsigned Evaluator + Fuel Monotonicity | CRIT | N19.1, N18.2 | completed ✓ |
+| N19.3 Unsigned Agreement + Non-Vacuity | CRIT | N19.2 | completed ✓ |
+| N19.4 Unsigned Simulation (Lifting Pattern) | CRIT | N19.3 | completed ✓ |
 
 #### Formal Properties (v3.1.0 — Fase 2)
 
@@ -151,10 +151,10 @@ stmtToMicroC_correct_uint32 : forward simulation for unsigned programs
 
 #### Bloques
 
-- [ ] **B15: Unsigned Foundation**: N19.1
-- [ ] **B16: Unsigned Eval + FuelMono**: N19.2
-- [ ] **B17: Unsigned Agreement**: N19.3
-- [ ] **B18: Unsigned Simulation**: N19.4
+- [x] **B15: Unsigned Foundation**: N19.1 — closed 2026-03-22
+- [x] **B16: Unsigned Eval + FuelMono**: N19.2 — closed 2026-03-22
+- [x] **B17: Unsigned Agreement**: N19.3 — closed 2026-03-22
+- [x] **B18: Unsigned Simulation**: N19.4 — closed 2026-03-22
 
 ### Fase 3: Plonky3 Field Bridges
 
@@ -205,9 +205,9 @@ theorem monty_reduce_correct (x : Nat) (hx : x < R * P) :
 
 | Nodo | Tipo | Deps | Status |
 |------|------|------|--------|
-| N20.1 Mersenne31 Reduce Bridge | CRIT | N19.4 | pending |
-| N20.2 BabyBear Montgomery Reduce Bridge | CRIT | N19.4 | pending |
-| N20.3 Integration + Audit + v3.1 Tag | HOJA | N20.1, N20.2 | pending |
+| N20.1 Mersenne31 Reduce Bridge | CRIT | N19.4 | completed ✓ |
+| N20.2 BabyBear Montgomery Reduce Bridge | CRIT | N19.4 | completed ✓ |
+| N20.3 Integration + Audit + v3.1 Tag | HOJA | N20.1, N20.2 | completed ✓ |
 
 #### Formal Properties (v3.1.0 — Fase 3)
 
@@ -226,8 +226,8 @@ theorem monty_reduce_correct (x : Nat) (hx : x < R * P) :
 
 #### Bloques
 
-- [ ] **B19: Mersenne31 + BabyBear Bridges** (AGENT_TEAM): N20.1, N20.2
-- [ ] **B20: Integration + Audit**: N20.3
+- [x] **B19: Mersenne31 + BabyBear Bridges** (AGENT_TEAM): N20.1, N20.2 — closed 2026-03-22
+- [x] **B20: Integration + Audit**: N20.3 — closed 2026-03-27
 
 ---
 
