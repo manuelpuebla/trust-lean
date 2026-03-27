@@ -5,6 +5,8 @@
   N4.1: PAR — shared utilities used by both C and Rust backends.
   N9.1 (v1.2.0): Added c99Keywords, cReservedIdentifiers, sanitizeIdentifier,
   isValidCIdent, filterCIdentChars, formatArrayAccess with correctness theorems.
+  N21.1 (v3.2.0): Added countChar shared infrastructure, rustKeywords (Rust 2021 edition,
+  Rust Reference S2.1), rustReservedIdentifiers, sanitizeIdentifierRust with theorems.
 -/
 
 import TrustLean.Core.Value
@@ -220,5 +222,239 @@ def formatArrayAccess (base : String) (idx : String) : String :=
 
 @[simp] theorem formatArrayAccess_def (base idx : String) :
     formatArrayAccess base idx = base ++ "[" ++ idx ++ "]" := rfl
+
+/-! ## Character Counting Infrastructure (shared C + Rust) (N21.1) -/
+
+/-- Count occurrences of a character in a string. -/
+def countChar (c : Char) (s : String) : Nat :=
+  s.toList.countP (· == c)
+
+@[simp] theorem countChar_empty (c : Char) : countChar c "" = 0 := by
+  unfold countChar; rfl
+
+theorem countChar_append (c : Char) (s1 s2 : String) :
+    countChar c (s1 ++ s2) = countChar c s1 + countChar c s2 := by
+  unfold countChar
+  rw [String.toList_append, List.countP_append]
+
+/-! ## Rust Keyword Infrastructure (N21.1)
+    Source: Rust 2021 edition, The Rust Reference §2.1 (Keywords) -/
+
+/-- Rust strict keywords (39): cannot be used as identifiers. -/
+def rustStrictKeywords : List String :=
+  ["as", "async", "await", "break", "const", "continue", "crate", "dyn",
+   "else", "enum", "extern", "false", "fn", "for", "if", "impl", "in",
+   "let", "loop", "match", "mod", "move", "mut", "pub", "ref", "return",
+   "self", "Self", "static", "struct", "super", "trait", "true", "type",
+   "unsafe", "use", "where", "while"]
+
+/-- Rust reserved keywords (14): reserved for future use. -/
+def rustReservedKeywords : List String :=
+  ["abstract", "become", "box", "do", "final", "gen", "macro", "override",
+   "priv", "try", "typeof", "unsized", "virtual", "yield"]
+
+/-- All Rust keywords (53 = 39 strict + 14 reserved). -/
+def rustKeywords : List String :=
+  rustStrictKeywords ++ rustReservedKeywords
+
+/-- Rust standard library prelude names to avoid. -/
+def rustStdlibNames : List String :=
+  ["std", "alloc", "core", "usize", "isize",
+   "i8", "i16", "i32", "i64", "i128",
+   "u8", "u16", "u32", "u64", "u128",
+   "f32", "f64", "bool", "str", "char",
+   "Vec", "String", "Box", "Result", "Option",
+   "Some", "None", "Ok", "Err",
+   "panic", "println", "print", "assert", "main"]
+
+/-- All Rust reserved identifiers (keywords + stdlib prelude). -/
+def rustReservedIdentifiers : List String :=
+  rustKeywords ++ rustStdlibNames
+
+/-- Sanitize a string to produce a valid, non-reserved Rust identifier.
+    Same strategy as C sanitization: removes invalid chars, prefixes "tl_" if needed. -/
+def sanitizeIdentifierRust (s : String) : String :=
+  match s.toList.filter isValidCIdentChar with
+  | [] => "tl_empty"
+  | c :: cs =>
+    if c.isDigit then "tl_" ++ String.ofList (c :: cs)
+    else if rustReservedIdentifiers.contains (String.ofList (c :: cs))
+      then "tl_" ++ String.ofList (c :: cs)
+    else String.ofList (c :: cs)
+
+/-- Rust identifier validity uses the same ASCII rules as C
+    (Trust-Lean only generates ASCII identifiers from its AST). -/
+abbrev isValidRustIdent := isValidCIdent
+
+/-! ## Rust Sanitization Properties (N21.2) -/
+
+/-- No Rust keyword starts with "tl_". -/
+private theorem rustKeywords_no_tl_prefix :
+    ∀ k ∈ rustKeywords, k.toList.take 3 ≠ ['t', 'l', '_'] := by decide
+
+/-- No Rust reserved identifier starts with "tl_". -/
+private theorem rustReserved_no_tl_prefix :
+    ∀ k ∈ rustReservedIdentifiers, k.toList.take 3 ≠ ['t', 'l', '_'] := by decide
+
+/-- "tl_empty" is not a Rust keyword. -/
+private theorem tl_empty_not_rustKeyword : "tl_empty" ∉ rustKeywords := by decide
+
+/-- No string prefixed with "tl_" is a Rust keyword. -/
+theorem tl_prefix_not_rustKeyword (s : String) : ("tl_" ++ s) ∉ rustKeywords := by
+  intro hmem
+  exact rustKeywords_no_tl_prefix ("tl_" ++ s) hmem (tl_append_toList_take s)
+
+/-- sanitizeIdentifierRust never produces a Rust keyword (P0). -/
+theorem sanitizeIdentifierRust_not_keyword (s : String) :
+    sanitizeIdentifierRust s ∉ rustKeywords := by
+  unfold sanitizeIdentifierRust
+  split
+  · exact tl_empty_not_rustKeyword
+  · rename_i c cs hfilter
+    split
+    · exact tl_prefix_not_rustKeyword _
+    · split
+      · exact tl_prefix_not_rustKeyword _
+      · rename_i _hnotdigit hnotreserved
+        intro hmem
+        have hres : String.ofList (c :: cs) ∈ rustReservedIdentifiers :=
+          List.mem_append_left _ hmem
+        rw [List.contains_iff_mem] at hnotreserved
+        exact hnotreserved hres
+
+/-- sanitizeIdentifierRust always produces a non-empty string (P0). -/
+theorem sanitizeIdentifierRust_nonempty (s : String) :
+    (sanitizeIdentifierRust s).toList ≠ [] := by
+  unfold sanitizeIdentifierRust
+  split
+  · decide
+  · rename_i c cs _hfilter
+    split
+    · rw [String.toList_append, tl_toList]; exact List.cons_ne_nil _ _
+    · split
+      · rw [String.toList_append, tl_toList]; exact List.cons_ne_nil _ _
+      · rw [String.toList_ofList]; exact List.cons_ne_nil _ _
+
+/-- sanitizeIdentifierRust output is a valid identifier (P0). -/
+theorem sanitizeIdentifierRust_valid (s : String) :
+    isValidRustIdent (sanitizeIdentifierRust s) = true := by
+  unfold sanitizeIdentifierRust
+  split
+  · unfold isValidRustIdent isValidCIdent; decide
+  · rename_i c cs hfilter
+    have hall : (c :: cs).all isValidCIdentChar = true :=
+      hfilter ▸ all_filter_pred s.toList isValidCIdentChar
+    split
+    · exact isValidCIdent_tl_prefix (c :: cs) hall
+    · split
+      · exact isValidCIdent_tl_prefix (c :: cs) hall
+      · rename_i hnotdigit _hnotreserved
+        unfold isValidRustIdent isValidCIdent
+        rw [String.toList_ofList]
+        simp only [Bool.and_eq_true]
+        constructor
+        · have hvalid : isValidCIdentChar c = true :=
+            List.all_eq_true.mp hall c List.mem_cons_self
+          unfold isValidCIdentChar at hvalid
+          have hd : c.isDigit = false := Bool.eq_false_iff.mpr hnotdigit
+          rw [hd] at hvalid
+          simp only [Bool.or_false] at hvalid
+          exact hvalid
+        · exact hall
+
+/-- No string prefixed with "tl_" is in rustReservedIdentifiers. -/
+theorem tl_prefix_not_rustReserved (s : String) :
+    ("tl_" ++ s) ∉ rustReservedIdentifiers := by
+  intro hmem
+  exact rustReserved_no_tl_prefix ("tl_" ++ s) hmem (tl_append_toList_take s)
+
+/-- "tl_empty" is not in rustReservedIdentifiers. -/
+private theorem tl_empty_not_rustReserved : "tl_empty" ∉ rustReservedIdentifiers := by decide
+
+/-- Helper: if all chars are valid, filter is identity. -/
+private theorem filter_valid_id (l : List Char) (h : l.all isValidCIdentChar = true) :
+    l.filter isValidCIdentChar = l :=
+  List.filter_eq_self.mpr (List.all_eq_true.mp h)
+
+/-- Helper: output of sanitizeIdentifierRust has all valid ident chars. -/
+private theorem sanitizeIdentifierRust_allValid (s : String) :
+    (sanitizeIdentifierRust s).toList.all isValidCIdentChar = true := by
+  have h := sanitizeIdentifierRust_valid s
+  unfold isValidRustIdent isValidCIdent at h
+  cases hlist : (sanitizeIdentifierRust s).toList with
+  | nil => simp [List.all_eq_true]
+  | cons c cs =>
+    rw [hlist] at h; simp only [Bool.and_eq_true] at h; exact h.2
+
+/-- Helper: output of sanitizeIdentifierRust starts with non-digit. -/
+private theorem sanitizeIdentifierRust_notDigitStart (s : String) :
+    ∀ c cs, (sanitizeIdentifierRust s).toList = c :: cs → c.isDigit = false := by
+  unfold sanitizeIdentifierRust
+  split
+  · -- "tl_empty": first char 't'
+    intro c cs h
+    have heq : "tl_empty".toList = ['t', 'l', '_', 'e', 'm', 'p', 't', 'y'] := by native_decide
+    rw [heq] at h; rw [(List.cons.inj h.symm).1]; decide
+  · rename_i c' cs' _
+    split
+    · -- "tl_" ++ ...: first char 't'
+      intro c cs h; rw [String.toList_append, tl_toList] at h
+      have : c = 't' := by simp at h; exact h.1.symm
+      rw [this]; decide
+    · split
+      · -- "tl_" ++ ...: first char 't'
+        intro c cs h; rw [String.toList_append, tl_toList] at h
+        have : c = 't' := by simp at h; exact h.1.symm
+        rw [this]; decide
+      · -- pass-through: c'.isDigit is false
+        rename_i hnotdigit _
+        intro c cs h; rw [String.toList_ofList] at h
+        have : c = c' := (List.cons.inj h).1.symm
+        rw [this]; exact Bool.eq_false_iff.mpr hnotdigit
+
+/-- Helper: output of sanitizeIdentifierRust is not in rustReservedIdentifiers. -/
+private theorem sanitizeIdentifierRust_notReserved (s : String) :
+    sanitizeIdentifierRust s ∉ rustReservedIdentifiers := by
+  unfold sanitizeIdentifierRust
+  split
+  · exact tl_empty_not_rustReserved
+  · rename_i c cs _hfilter
+    split
+    · exact tl_prefix_not_rustReserved _
+    · split
+      · exact tl_prefix_not_rustReserved _
+      · rename_i _ hnotres
+        intro hmem
+        exact absurd (List.contains_iff_mem.mpr hmem) hnotres
+
+/-- sanitizeIdentifierRust is idempotent: applying it twice = once (P0).
+    Relies on three properties of the output: all chars valid, non-digit start,
+    not in rustReservedIdentifiers. -/
+theorem sanitizeIdentifierRust_idempotent (s : String) :
+    sanitizeIdentifierRust (sanitizeIdentifierRust s) = sanitizeIdentifierRust s := by
+  set r := sanitizeIdentifierRust s
+  have hallValid := sanitizeIdentifierRust_allValid s
+  have hnotempty := sanitizeIdentifierRust_nonempty s
+  have hnotres := sanitizeIdentifierRust_notReserved s
+  -- r.toList.filter isValidCIdentChar = r.toList (all chars are valid)
+  have hfilterId := filter_valid_id r.toList hallValid
+  -- Unfold the second application
+  show sanitizeIdentifierRust r = r
+  unfold sanitizeIdentifierRust
+  rw [hfilterId]
+  cases hlist : r.toList with
+  | nil => exact absurd hlist hnotempty
+  | cons c cs =>
+    have hnotdigit := sanitizeIdentifierRust_notDigitStart s c cs hlist
+    -- r.toList = c :: cs, so String.ofList (c :: cs) = r
+    have heq_r : String.ofList (c :: cs) = r := by
+      rw [← hlist, String.ofList_toList]
+    -- Not reserved as Bool (needed for if-then-else reduction)
+    have hnotresOL : rustReservedIdentifiers.contains (String.ofList (c :: cs)) = false := by
+      apply Bool.eq_false_iff.mpr; intro h
+      have hmem := List.contains_iff_mem.mp h
+      rw [heq_r] at hmem; exact hnotres hmem
+    simp only [hnotdigit, hnotresOL, ite_false]
+    exact heq_r
 
 end TrustLean

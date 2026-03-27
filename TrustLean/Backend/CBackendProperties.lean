@@ -14,19 +14,9 @@ set_option autoImplicit false
 
 namespace TrustLean
 
-/-! ## Character Counting Infrastructure -/
+/-! ## Character Counting — imported from Common.lean (N21.1: moved to shared) -/
 
-/-- Count occurrences of a character in a string. -/
-def countChar (c : Char) (s : String) : Nat :=
-  s.toList.countP (· == c)
-
-@[simp] theorem countChar_empty (c : Char) : countChar c "" = 0 := by
-  unfold countChar; rfl
-
-theorem countChar_append (c : Char) (s1 s2 : String) :
-    countChar c (s1 ++ s2) = countChar c s1 + countChar c s2 := by
-  unfold countChar
-  rw [String.toList_append, List.countP_append]
+-- countChar, countChar_empty, countChar_append are now in Common.lean
 
 /-! ## Determinism (P0) -/
 

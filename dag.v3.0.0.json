@@ -1,0 +1,443 @@
+{
+  "version": "v3.0.0",
+  "project": "Trust-Lean",
+  "phases": [
+    {
+      "id": "int64",
+      "name": "Int64 Overflow Semantics",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N14.1",
+          "name": "Int64 Types + Properties",
+          "type": "FUND",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Int64.lean"
+          ],
+          "deps": [],
+          "blocks": [
+            "B1"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 5,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N14.2",
+          "name": "Int64 Evaluator + Fuel Monotonicity",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Int64Eval.lean"
+          ],
+          "deps": [
+            "N14.1"
+          ],
+          "blocks": [
+            "B2"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N14.3",
+          "name": "Int64 Agreement + Non-Vacuity",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Int64Agreement.lean"
+          ],
+          "deps": [
+            "N14.2"
+          ],
+          "blocks": [
+            "B3"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B1",
+          "name": "Int64 Foundation",
+          "nodes": [
+            "N14.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        },
+        {
+          "id": "B2",
+          "name": "Int64 Eval + FuelMono",
+          "nodes": [
+            "N14.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        },
+        {
+          "id": "B3",
+          "name": "Int64 Agreement",
+          "nodes": [
+            "N14.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        }
+      ]
+    },
+    {
+      "id": "call",
+      "name": "Call Semantics",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N15.1",
+          "name": "Call Types + Environment",
+          "type": "FUND",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/CallTypes.lean"
+          ],
+          "deps": [],
+          "blocks": [
+            "B4"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N15.2",
+          "name": "Call Evaluator + Fuel Monotonicity",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/CallEval.lean"
+          ],
+          "deps": [
+            "N15.1"
+          ],
+          "blocks": [
+            "B5"
+          ],
+          "metrics": {
+            "loc": 562,
+            "theorems": 7,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 3,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N15.3",
+          "name": "Call Simulation + Bridge",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/CallSimulation.lean"
+          ],
+          "deps": [
+            "N15.2"
+          ],
+          "blocks": [
+            "B6"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B4",
+          "name": "Call Types",
+          "nodes": [
+            "N15.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        },
+        {
+          "id": "B5",
+          "name": "Call Eval + FuelMono",
+          "nodes": [
+            "N15.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        },
+        {
+          "id": "B6",
+          "name": "Call Simulation + Bridge",
+          "nodes": [
+            "N15.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        }
+      ]
+    },
+    {
+      "id": "roundtrip",
+      "name": "Full Inductive Roundtrip",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N16.1",
+          "name": "Expression Roundtrip (all WFExpr)",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/RoundtripExpr.lean"
+          ],
+          "deps": [],
+          "blocks": [
+            "B7"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N16.2",
+          "name": "Statement Roundtrip (all WFStmt)",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/RoundtripStmt.lean"
+          ],
+          "deps": [
+            "N16.1"
+          ],
+          "blocks": [
+            "B8"
+          ],
+          "metrics": {
+            "loc": 1620,
+            "theorems": 63,
+            "lemmas": 0,
+            "defs": 9,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 2,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N16.3",
+          "name": "Master Roundtrip Theorem",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/RoundtripMaster.lean"
+          ],
+          "deps": [
+            "N16.2"
+          ],
+          "blocks": [
+            "B9"
+          ],
+          "metrics": {
+            "loc": 131,
+            "theorems": 2,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 2,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B7",
+          "name": "Expression Roundtrip",
+          "nodes": [
+            "N16.1"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-11"
+        },
+        {
+          "id": "B8",
+          "name": "Statement Roundtrip",
+          "nodes": [
+            "N16.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-12"
+        },
+        {
+          "id": "B9",
+          "name": "Master Roundtrip",
+          "nodes": [
+            "N16.3"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-12"
+        }
+      ]
+    },
+    {
+      "id": "integration",
+      "name": "v3.0 Integration + Audit",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N17.1",
+          "name": "Oracle Tests + Compatibility",
+          "type": "PAR",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Integration_v3.lean"
+          ],
+          "deps": [
+            "N14.3",
+            "N15.3",
+            "N16.3"
+          ],
+          "blocks": [
+            "B10"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N17.2",
+          "name": "Non-Vacuity + Zero Sorry Audit",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [
+            "TrustLean/MicroC/Integration_v3.lean"
+          ],
+          "deps": [
+            "N17.1"
+          ],
+          "blocks": [
+            "B10"
+          ],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B10",
+          "name": "Integration + Audit",
+          "nodes": [
+            "N17.1",
+            "N17.2"
+          ],
+          "status": "completed",
+          "closed_at": "2026-03-12"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "created": "2026-02-20T19:23:56Z",
+    "updated": "2026-03-12T14:10:53Z",
+    "total_nodes": 11,
+    "completed_nodes": 11
+  }
+}

@@ -1,391 +1,130 @@
 # Trust-Lean: Architecture
 
-## Current Version: v3.1.0
+## Current Version: v3.2.0 (completed)
 
-### Design Decisions (v3.1.0)
+### Design Decisions (v3.2.0)
 
-1. **Extension-only architecture (L-659)**: All v3.1 features add NEW files or extend existing constructors. Existing proof structure unchanged. Zero regression risk.
-2. **Value.int with unsigned wrapping (not new Value constructors)**: Keep `Value.int : Int → Value`. Add `wrapWidth w x = x % (2^w : Int)` (Euclidean mod, always non-negative for positive divisor — verified: `(-1) % 2^32 = 4294967295`). Avoids duplicating ~3000 LOC infrastructure.
-3. **wrapWidth as plain function (not typeclass)**: `def wrapWidth (w : Nat) (x : Int) : Int := x % (2^w : Int)`. Abbreviations: `wrapUInt32 := wrapWidth 32`, `wrapUInt64 := wrapWidth 64`. Simpler than typeclass, `Int.emod_*` lemmas apply directly. Sufficient for v3.1 scope (3 widths).
-4. **Bitwise via Lean core Int.land/lor/xor/shiftLeft/shiftRight**: No BitVec refactor (too invasive for v3.1). For unsigned values (≥ 0), Int bitwise = Nat bitwise. Shift amounts reduced mod 64: `let sa := y.toNat % 64; Int.shiftLeft x sa`.
-5. **Agreement split (L-630)**: Bitwise ops (band/bor/bxor/bshl/bshr) have UNCONDITIONAL agreement — they never overflow. Arithmetic (add/sub/mul) has CONDITIONAL agreement guarded by InUIntRange. Casting (widen/trunc) is unconditional.
-6. **Lifting pattern for unsigned simulation (L-657)**: Prove `evalMicroC result => evalMicroC_uint32 result` for call-free programs. Then `stmtToMicroC_correct_uint32 = stmtToMicroC_correct + lift` (3-line composition). Saves ~300 LOC duplication.
-7. **widen32to64 semantics**: `x % 2^32` — truncates to 32 bits then zero-extends. Identity for valid UInt32 values (0 ≤ x < 2^32). Safety net for out-of-range inputs.
-8. **Two-tiered bridge (machine wrapping ≠ field reduction)**: Tier 1 = machine arithmetic in `[0, 2^N)` via `wrapUInt32/64`. Tier 2 = field reduction `x % P` (prime modulus) via per-function refinement proofs. Trust-Lean handles Tier 1; bridge theorems connect to AMO-Lean's Tier 2 specs.
-9. **Plonky3/ directory for field bridges**: Separate from existing Bridge/ (which handles ExpandedSigma). Scalable for Goldilocks in v3.2.
-10. **128-bit (Goldilocks) deferred to v3.2**: Only Mersenne31 (u32/u64) and BabyBear (u32/u64) in v3.1. Goldilocks requires u128 hi/lo splitting.
-11. **Shift amounts reduced mod 64 (documented deviation from C99)**: All evaluators (Int64, UInt32, UInt64) reduce shift amounts via `b.toNat % 64`. For 32-bit programs, shifts ≥ 32 produce DEFINED results (zero for right-shift of non-negative values, large values wrapped for left-shift). C99 makes shifts ≥ width undefined behavior. Our model gives DEFINED semantics to all shift amounts — this is MORE conservative than C99 (we prove more programs correct, never less). Programs with shifts ≥ width are considered well-defined in Trust-Lean's formal model but would be UB in a real C compiler.
+1. **Extension-only architecture**: All v3.2 features add `RustBackendProperties.lean` and extend `Common.lean`. No C/MicroC files modified. Zero regression risk.
+2. **`_tl_` prefix for Rust sanitization (not `r#`)**: Reuse same prefix pattern as C backend for cross-backend consistency. `r#` is Rust-specific and complicates string analysis (`#` is not alphanumeric). The `_tl_` prefix never appears in any keyword list (proved by `rustKeywords_no_tl_prefix`).
+3. **Hybrid induction+decide for balanced braces**: General theorem by structural induction on 12 Stmt constructors (scalable). Concrete examples by `decide` for validation. Same strategy as CBackendProperties.
+4. **isValidRustIdent = isValidCIdent**: Rust identifiers follow same ASCII rules (alphanumeric + underscore). Conservative subset — Trust-Lean only generates ASCII identifiers from its own AST. Unicode UAX#31 out of scope.
+5. **53 Rust keywords (39 strict + 14 reserved)**: Per Rust 2021 edition, Rust Reference S2.1. Weak keywords (union, macro_rules, raw, safe) excluded — they are valid identifiers in most contexts.
+6. **countChar moved to Common.lean**: Shared infrastructure for both C and Rust balanced braces proofs. Previously in CBackendProperties.lean.
+7. **Wrapping arithmetic deferred to v3.3**: v3.2 scope = formal properties of code emission. `.wrapping_add()` emission requires semantic changes to stmtToRust, separate phase.
+8. **Ownership/borrowing = non-goal**: Trust-Lean emits only owned values (`let mut x: i64`). No `&`, `&mut`, lifetimes. Ownership-trivial subset per RustBelt framework.
 
-### Fase 1: Bitwise + Casting IR Extension
+### Fase 4: Rust Sanitization Foundation
 
-**Contents**: Extends Core IR with 5 bitwise BinOps (band, bor, bxor, bshl, bshr) and 2 casting UnaryOps (widen32to64, trunc64to32). Propagates through MicroC AST, evaluators, backends, parser/printer, and roundtrip proofs. All existing proofs verified via Lean exhaustivity — regression = 0.
-
-**New constructors**:
-```
-BinOp: + band | bor | bxor | bshl | bshr     (7 → 12)
-UnaryOp: + widen32to64 | trunc64to32          (2 → 4)
-```
-
-**Semantics**:
-```
-band  → Int.land a b
-bor   → Int.lor a b
-bxor  → Int.xor a b
-bshl  → Int.shiftLeft a (b.toNat % 64)
-bshr  → Int.shiftRight a (b.toNat % 64)
-widen32to64  → x % 2^32   (zero-extend: identity for valid u32)
-trunc64to32  → x % 2^32   (truncate: keep low 32 bits)
-```
-
-**Files modified**:
-- `TrustLean/Core/Value.lean` — BinOp + UnaryOp constructors
-- `TrustLean/Core/Eval.lean` — evalBinOp + evalUnaryOp cases
-- `TrustLean/MicroC/AST.lean` — MicroCBinOp + MicroCUnaryOp
-- `TrustLean/MicroC/Translation.lean` — bijection extension
-- `TrustLean/MicroC/Eval.lean` — evalMicroCBinOp/UnaryOp
-- `TrustLean/MicroC/Int64Eval.lean` — int64 wrapping for new ops
-- `TrustLean/MicroC/Int64Agreement.lean` — 7 new agreement theorems
-- `TrustLean/MicroC/PrettyPrint.lean` — printer for new ops
-- `TrustLean/MicroC/Parser.lean` — parser for new ops
-- `TrustLean/MicroC/RoundtripExpr.lean` — expression roundtrip extension
-- `TrustLean/MicroC/RoundtripStmt.lean` — statement roundtrip verification
-- `TrustLean/Backend/CBackend.lean` — `"&"`, `"|"`, `"^"`, `"<<"`, `">>"`, `"(int64_t)"`, `"(int32_t)"`
-- `TrustLean/Backend/RustBackend.lean` — Rust equivalents
-
-**Files new**:
-- `TrustLean/MicroC/Integration_v31.lean` — smoke tests + regression
-
-#### DAG (v3.1.0 — Fase 1)
-
-| Nodo | Tipo | Deps | Status |
-|------|------|------|--------|
-| N18.1 Core IR Extension (BinOp + UnaryOp) | FUND | — | completed ✓ |
-| N18.2 MicroC Bitwise/Casting Integration + Agreement | CRIT | N18.1 | completed ✓ |
-| N18.3 Roundtrip Extension (PrettyPrint + Parser) | CRIT | N18.2 | completed ✓ |
-| N18.4 Simulation Regression + Smoke Tests | HOJA | N18.2, N18.3 | completed ✓ |
-
-#### Formal Properties (v3.1.0 — Fase 1)
-
-| Nodo | Propiedad | Tipo | Prioridad |
-|------|-----------|------|-----------|
-| N18.1 | evalBinOp band/bor/bxor returns Int for Int inputs | SOUNDNESS | P0 |
-| N18.1 | evalBinOp bshl/bshr shift amount reduced mod 64 | INVARIANT | P0 |
-| N18.1 | evalUnaryOp widen32to64 is identity for values in [0, 2^32) | EQUIVALENCE | P0 |
-| N18.1 | evalUnaryOp trunc64to32 output always in [0, 2^32) | INVARIANT | P0 |
-| N18.2 | microCBinOpToCore/binOpToMicroC roundtrip for all 12 ops | EQUIVALENCE | P0 |
-| N18.2 | Int64 agreement for bitwise: UNCONDITIONAL (no InInt64Range) | EQUIVALENCE | P0 |
-| N18.2 | Int64 agreement for casting: UNCONDITIONAL | EQUIVALENCE | P0 |
-| N18.3 | Expression roundtrip for all 5 new BinOps + 2 new UnaryOps | EQUIVALENCE | P0 |
-| N18.4 | stmtToMicroC_correct still compiles (0 sorry) | PRESERVATION | P0 |
-| N18.4 | master_roundtrip still compiles (0 sorry) | PRESERVATION | P0 |
-| N18.4 | Smoke: (0xFF & 0x0F) = 0x0F, (8 >> 2) = 2, (3 << 4) = 48 | SOUNDNESS | P0 |
-
-#### Bloques
-
-- [x] **B11: Core IR Extension**: N18.1 — closed 2026-03-22
-- [x] **B12: MicroC Bitwise + Agreement**: N18.2 — closed 2026-03-22
-- [x] **B13: Roundtrip Extension**: N18.3 — closed 2026-03-22
-- [x] **B14: Simulation Regression**: N18.4 — closed 2026-03-22
-
-### Fase 2: Unsigned Evaluator (UInt32/UInt64)
-
-**Contents**: Parametric unsigned wrapping via `wrapWidth`. New evaluators `evalMicroC_uint32`/`evalMicroC_uint64` following the Int64Eval template exactly. Fuel monotonicity, agreement theorems, and simulation via lifting pattern.
-
-**Files new**:
-- `TrustLean/MicroC/Unsigned.lean` — wrapWidth, wrapUInt32/64, InUInt32/64Range, properties
-- `TrustLean/MicroC/UnsignedEval.lean` — evalMicroC_uint32/64 + fuel monotonicity
-- `TrustLean/MicroC/UnsignedAgreement.lean` — per-op agreement + non-vacuity
-- `TrustLean/MicroC/UnsignedSimulation.lean` — lifting + simulation composition
-
-**Key definitions**:
-```
-def wrapWidth (w : Nat) (x : Int) : Int := x % (2^w : Int)
-def wrapUInt32 := wrapWidth 32
-def wrapUInt64 := wrapWidth 64
-def InUInt32Range (n : Int) : Prop := 0 ≤ n ∧ n < 2^32
-def InUInt64Range (n : Int) : Prop := 0 ≤ n ∧ n < 2^64
-```
-
-**Key theorems**:
-```
-wrapWidth_nonneg : 0 ≤ wrapWidth w x
-wrapWidth_lt : wrapWidth w x < 2^w
-wrapWidth_idempotent : wrapWidth w (wrapWidth w x) = wrapWidth w x
-wrapWidth_of_inRange : 0 ≤ x → x < 2^w → wrapWidth w x = x
-wrapWidth_add : wrapWidth w (wrapWidth w a + wrapWidth w b) = wrapWidth w (a + b)
-wrapWidth_sub : wrapWidth w (wrapWidth w a - wrapWidth w b) = wrapWidth w (a - b)
-wrapWidth_mul : wrapWidth w (wrapWidth w a * wrapWidth w b) = wrapWidth w (a * b)
-evalMicroC_uint32_fuel_mono : fuel monotonicity for unsigned evaluator
-evalMicroCBinOp_uint32_agree : per-op agreement (conditional/unconditional split)
-stmtToMicroC_correct_uint32 : forward simulation for unsigned programs
-```
-
-#### DAG (v3.1.0 — Fase 2)
-
-| Nodo | Tipo | Deps | Status |
-|------|------|------|--------|
-| N19.1 Unsigned Wrapping Foundation | FUND | — | completed ✓ |
-| N19.2 Unsigned Evaluator + Fuel Monotonicity | CRIT | N19.1, N18.2 | completed ✓ |
-| N19.3 Unsigned Agreement + Non-Vacuity | CRIT | N19.2 | completed ✓ |
-| N19.4 Unsigned Simulation (Lifting Pattern) | CRIT | N19.3 | completed ✓ |
-
-#### Formal Properties (v3.1.0 — Fase 2)
-
-| Nodo | Propiedad | Tipo | Prioridad |
-|------|-----------|------|-----------|
-| N19.1 | wrapWidth w x always in [0, 2^w) | INVARIANT | P0 |
-| N19.1 | wrapWidth idempotent | INVARIANT | P0 |
-| N19.1 | wrapWidth identity on in-range values | EQUIVALENCE | P0 |
-| N19.1 | wrapWidth add/sub/mul composition (via Int.emod_*) | SOUNDNESS | P0 |
-| N19.1 | Non-vacuity: wrapUInt32 boundary examples | SOUNDNESS | P0 |
-| N19.2 | evalMicroC_uint32 fuel monotonicity | SOUNDNESS | P0 |
-| N19.2 | evalMicroC_uint32 skip = (.normal, env) | INVARIANT | P0 |
-| N19.2 | evalMicroC_uint32 wraps at operation boundaries only (L-626) | INVARIANT | P0 |
-| N19.3 | Arithmetic agreement: CONDITIONAL on InUInt32Range | EQUIVALENCE | P0 |
-| N19.3 | Bitwise agreement: UNCONDITIONAL | EQUIVALENCE | P0 |
-| N19.3 | Casting agreement: UNCONDITIONAL | EQUIVALENCE | P0 |
-| N19.3 | Non-vacuity: 8+ examples including overflow and Mersenne-like masking | SOUNDNESS | P0 |
-| N19.4 | Lifting: evalMicroC result => evalMicroC_uint32 result (call-free) | EQUIVALENCE | P0 |
-| N19.4 | stmtToMicroC_correct_uint32: forward simulation for unsigned | SOUNDNESS | P0 |
-| N19.4 | Non-vacuity: end-to-end unsigned program evaluation | SOUNDNESS | P0 |
-
-#### Bloques
-
-- [x] **B15: Unsigned Foundation**: N19.1 — closed 2026-03-22
-- [x] **B16: Unsigned Eval + FuelMono**: N19.2 — closed 2026-03-22
-- [x] **B17: Unsigned Agreement**: N19.3 — closed 2026-03-22
-- [x] **B18: Unsigned Simulation**: N19.4 — closed 2026-03-22
-
-### Fase 3: Plonky3 Field Bridges
-
-**Contents**: Per-function refinement proofs connecting MicroC unsigned evaluation to modular arithmetic specs. Mersenne31 reduce via bit-splitting (2^31 ≡ 1 mod P). BabyBear Montgomery reduce via REDC algorithm. Both connect to AMO-Lean's existing `from_u62_val_mod` and `bb_monty_roundtrip` theorems.
-
-**Two-tiered bridge**:
-- **Tier 1 (Trust-Lean)**: Machine wrapping — `evalMicroC_uint32/64` produces values in `[0, 2^N)`
-- **Tier 2 (Bridge theorem)**: Field reduction — output equals `x % P` where P is the prime modulus
-- **Tier 3 (AMO-Lean, external)**: `x % P = (from_u62 x).value.toNat` or `monty_reduce_spec`
-
-**Files new**:
-- `TrustLean/Plonky3/Mersenne31Reduce.lean` — reduce program + correctness
-- `TrustLean/Plonky3/BabyBearReduce.lean` — Montgomery program + correctness
-
-**Mersenne31 Reduce** (models Plonky3's `reduce_64`):
-```c
-// MicroC program:
-lo = x & 0x7FFFFFFF;       // band: low 31 bits
-hi = x >> 31;               // bshr: divide by 2^31
-sum = lo + hi;               // add (may exceed P by 1)
-if (sum >= P) sum = sum - P; // conditional subtract
-result = sum;
-```
-```
-// Correctness: 2^31 ≡ 1 (mod P), so x = lo + hi * 2^31 ≡ lo + hi (mod P)
-theorem reduce_mersenne31_correct (x : Nat) (hx : x < 2^62) :
-    ∃ env', evalMicroC_uint32 fuel env reduce_prog = some (.normal, env')
-      ∧ env' "result" = Value.int (x % (2^31 - 1))
-```
-
-**BabyBear Montgomery Reduce** (models Plonky3's `monty_reduce`):
-```c
-// MicroC program:
-t = (int32_t)(x * MU);            // mul + trunc: (x * MU) % 2^32
-u = (int64_t)t * (int64_t)P;      // widen + mul: t * P in 64-bit
-q = (int32_t)((x - u) >> 32);     // sub + bshr + trunc: (x - u) / R
-if (q >= P) q = q - P;            // conditional subtract
-result = q;
-```
-```
-// Correctness: R * result ≡ x (mod P) where R = 2^32
-theorem monty_reduce_correct (x : Nat) (hx : x < R * P) :
-    ∃ env', evalMicroC_uint64 fuel env monty_prog = some (.normal, env')
-      ∧ (R * (env' "result").getInt) % P = x % P
-```
-
-#### DAG (v3.1.0 — Fase 3)
-
-| Nodo | Tipo | Deps | Status |
-|------|------|------|--------|
-| N20.1 Mersenne31 Reduce Bridge | CRIT | N19.4 | completed ✓ |
-| N20.2 BabyBear Montgomery Reduce Bridge | CRIT | N19.4 | completed ✓ |
-| N20.3 Integration + Audit + v3.1 Tag | HOJA | N20.1, N20.2 | completed ✓ |
-
-#### Formal Properties (v3.1.0 — Fase 3)
-
-| Nodo | Propiedad | Tipo | Prioridad |
-|------|-----------|------|-----------|
-| N20.1 | reduce_mersenne31_correct: eval output = x % (2^31 - 1) | SOUNDNESS | P0 |
-| N20.1 | Mersenne identity: 2^31 ≡ 1 (mod 2^31 - 1) used in proof | INVARIANT | P0 |
-| N20.1 | Non-vacuity: concrete reduce matching known values | SOUNDNESS | P0 |
-| N20.2 | monty_reduce_correct: R * result ≡ x (mod P) | SOUNDNESS | P0 |
-| N20.2 | Montgomery identity: (MU * P + 1) % R = 0 used in proof | INVARIANT | P0 |
-| N20.2 | Non-vacuity: concrete Montgomery matching bb_monty_roundtrip values | SOUNDNESS | P0 |
-| N20.3 | Zero sorry across entire project | SOUNDNESS | P0 |
-| N20.3 | spec_audit: 0 T1, 0 T1.5 issues | SOUNDNESS | P0 |
-| N20.3 | wiring_check: 0 W1 issues | SOUNDNESS | P0 |
-| N20.3 | Full regression: all v3.0 tests pass | PRESERVATION | P0 |
-
-#### Bloques
-
-- [x] **B19: Mersenne31 + BabyBear Bridges** (AGENT_TEAM): N20.1, N20.2 — closed 2026-03-22
-- [x] **B20: Integration + Audit**: N20.3 — closed 2026-03-27
-
----
-
-### Design Decisions (v3.0.0)
-
-1. **Extension-only architecture**: All v3.0 features add NEW files. No v2.0 files are modified. Zero regression risk.
-2. **Int64 as wrapping layer, not type change**: Keep `Value.int : Int` (unbounded). Add `wrapInt64 : Int → Int` with two's complement signed semantics. Create separate `evalMicroC_int64` evaluator. Agreement theorem proves equivalence for overflow-free programs.
-3. **wrapInt64 definition**: `let n' := n % twoPow64; if n' > maxInt64 then n' - twoPow64 else n'` where `twoPow64 = 2^64`, `maxInt64 = 2^63 - 1`. Lean 4 `Int.mod` is Euclidean (non-negative for positive divisor), so this correctly models two's complement.
-4. **Call semantics: non-recursive only**: `MicroCFuncEnv := String → Option MicroCFuncDef`. Precondition `NonRecursive`: no `.call` constructors in function bodies (checked by `HasCall` predicate). This rules out all recursion (direct, mutual, transitive).
-5. **Call scoping**: Fresh environment for callee. On `.call result fname args`: (1) lookup fname, (2) eval args in caller env, (3) create fresh env with params bound to arg values, (4) eval body in fresh env with remaining fuel, (5) extract return value, (6) update caller env with result = return value.
-6. **Roundtrip: expression-first**: WFExpr is self-recursive (no WFStmt dependency). Prove expression roundtrip by WFExpr induction, then statement roundtrip using expression roundtrip as lemma. No mutual induction needed.
-7. **Parser fuel = string length**: `exprFuel e := (microCExprToString e).toList.length`. Robust: fuel ≥ characters consumed. Avoids tree-depth vs string-length mismatch.
-8. **Feature ordering**: Int64 → Call → Roundtrip → Integration. Types first, evaluation second, proofs third. Phases 1 and 2 are independent but done sequentially for lesson transfer.
-
-### Int64 Overflow Semantics
-
-**Contents**: Two's complement wrapping arithmetic (mod 2^64) as extension layer. New evaluator evalMicroC_int64 wraps after arithmetic ops. Agreement theorem proves equivalence with unbounded evaluator for overflow-free programs.
+**Contents**: Extend Common.lean with Rust keyword table, sanitizeIdentifierRust, isValidRustIdent, countChar shared infrastructure.
 
 **Files**:
-- `TrustLean/MicroC/Int64.lean`
-- `TrustLean/MicroC/Int64Eval.lean`
-- `TrustLean/MicroC/Int64Agreement.lean`
+- `TrustLean/Backend/Common.lean`
 
-#### DAG (v3.0.0)
+#### DAG (v3.2.0)
 
 | Nodo | Tipo | Deps | Status |
 |------|------|------|--------|
-| N14.1 Int64 Types + Properties | FUND | — | completed ✓ |
-| N14.2 Int64 Evaluator + Fuel Monotonicity | CRIT | N14.1 | completed ✓ |
-| N14.3 Int64 Agreement + Non-Vacuity | CRIT | N14.2 | completed ✓ |
+| N21.1 Rust Keywords + Shared countChar Infrastructure | FUND | — | completed ✓ |
+| N21.2 Sanitization Theorems (not_keyword, nonempty, valid, idempotent) | CRIT | N21.1 | completed ✓ |
 
-#### Formal Properties (v3.0.0)
+#### Formal Properties (v3.2.0)
 
 | Nodo | Propiedad | Tipo | Prioridad |
 |------|-----------|------|-----------|
-| N14.1 | wrapInt64 is idempotent | INVARIANT | P0 |
-| N14.1 | wrapInt64 is identity on InInt64Range values | INVARIANT | P0 |
-| N14.1 | wrapInt64 output is always in InInt64Range | INVARIANT | P0 |
-| N14.1 | Boundary: wrapInt64(maxInt64+1) = minInt64 | SOUNDNESS | P0 |
-| N14.1 | Boundary: wrapInt64(minInt64-1) = maxInt64 | SOUNDNESS | P0 |
-| N14.2 | evalMicroC_int64 fuel monotonicity | SOUNDNESS | P0 |
-| N14.2 | evalMicroC_int64 skip = unbounded skip | EQUIVALENCE | P0 |
-| N14.3 | BinOp in-range agreement: if result in Int64Range, int64 eval = unbounded eval | EQUIVALENCE | P0 |
-| N14.3 | Non-vacuity: overflow-free program agreement | SOUNDNESS | P0 |
+| N21.1 | rustKeywords contains all 53 strict+reserved Rust keywords | INVARIANT | P0 |
+| N21.1 | sanitizeIdentifierRust is total (no partial, no sorry) | INVARIANT | P0 |
+| N21.1 | isValidRustIdent accepts only ASCII alphanumeric + underscore | INVARIANT | P0 |
+| N21.1 | countChar_empty and countChar_append shared in Common.lean | INVARIANT | P1 |
+| N21.2 | sanitizeIdentifierRust output never in rustKeywords | SOUNDNESS | P0 |
+| N21.2 | sanitizeIdentifierRust output is nonempty | INVARIANT | P0 |
+| N21.2 | sanitizeIdentifierRust output passes isValidRustIdent | SOUNDNESS | P0 |
+| N21.2 | sanitizeIdentifierRust is idempotent (relies on rustKeywords_no_tl_prefix) | EQUIVALENCE | P0 |
 
 > **Nota**: Propiedades en lenguaje natural (intención de diseño).
 > Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
 
 #### Bloques
 
-- [x] **Int64 Foundation**: N14.1 — closed 2026-03-11
-- [x] **Int64 Eval + FuelMono**: N14.2 — closed 2026-03-11
-- [x] **Int64 Agreement**: N14.3 — closed 2026-03-11
+- [x] **B21: Keywords + countChar Infrastructure**: N21.1 — closed 2026-03-27
+- [x] **B22: Sanitization Theorems**: N21.2 — closed 2026-03-27
 
-### Call Semantics
+### RustBackendProperties
 
-**Contents**: Function call evaluation replacing the evalMicroC stub (.call => none). MicroCFuncEnv maps function names to definitions. Non-recursive calls only (no call in function bodies). Fresh environment for callee, return value propagation.
+**Contents**: Formal properties for Rust code emission: expression correctness, balanced braces (hybrid induction+decide), structural properties, Rust-specific idioms.
 
 **Files**:
-- `TrustLean/MicroC/CallTypes.lean`
-- `TrustLean/MicroC/CallEval.lean`
-- `TrustLean/MicroC/CallSimulation.lean`
+- `TrustLean/Backend/RustBackendProperties.lean`
 
-#### DAG (v3.0.0)
+#### DAG (v3.2.0)
 
 | Nodo | Tipo | Deps | Status |
 |------|------|------|--------|
-| N15.1 Call Types + Environment | FUND | — | completed ✓ |
-| N15.2 Call Evaluator + Fuel Monotonicity | CRIT | N15.1 | completed ✓ |
-| N15.3 Call Simulation + Bridge | CRIT | N15.2 | completed ✓ |
+| N22.1 Expression Emission Properties (determinism, litInt, litBool) | PAR | N21.2 | completed ✓ |
+| N22.2 Balanced Braces (stmtBracePairs + general theorem + examples) | CRIT | N21.1 | completed ✓ |
+| N22.3 Structural Properties (for desugaring, header, control flow braces) | PAR | N21.1 | completed ✓ |
+| N22.4 Rust-Specific Properties (cast postfix, no parens, let mut, usize) | PAR | N21.2 | completed ✓ |
 
-#### Formal Properties (v3.0.0)
+#### Formal Properties (v3.2.0)
 
 | Nodo | Propiedad | Tipo | Prioridad |
 |------|-----------|------|-----------|
-| N15.1 | MicroCFuncEnv.default returns none for all lookups | INVARIANT | P0 |
-| N15.1 | NonRecursive: no HasCall in function bodies | INVARIANT | P0 |
-| N15.2 | evalMicroC_withCalls fuel monotonicity | SOUNDNESS | P0 |
-| N15.2 | evalMicroC_withCalls on call-free program = evalMicroC | EQUIVALENCE | P0 |
-| N15.2 | evalMicroC_withCalls with fresh env for callee (no scope leak) | SOUNDNESS | P0 |
-| N15.3 | Call simulation: bridge preserved through call evaluation | SOUNDNESS | P0 |
-| N15.3 | Non-vacuity: concrete call evaluation succeeds | SOUNDNESS | P0 |
+| N22.1 | exprToRust is deterministic (rfl) | EQUIVALENCE | P0 |
+| N22.1 | stmtToRust is deterministic (rfl) | EQUIVALENCE | P0 |
+| N22.1 | exprToRust litInt nonneg = toString n | SOUNDNESS | P0 |
+| N22.1 | exprToRust litInt neg = parenthesized toString n | SOUNDNESS | P0 |
+| N22.1 | exprToRust litBool true = true (not 1) | SOUNDNESS | P0 |
+| N22.1 | exprToRust litBool false = false (not 0) | SOUNDNESS | P0 |
+| N22.2 | stmtBracePairsRust per-constructor (5 simp lemmas) | INVARIANT | P0 |
+| N22.2 | 8 concrete balanced braces examples (by decide) | SOUNDNESS | P0 |
+| N22.2 | General balanced braces theorem by structural induction on 12 Stmt constructors | SOUNDNESS | P0 |
+| N22.2 | stmtToRust_ite_has_open_brace: countChar >= 2 | INVARIANT | P0 |
+| N22.2 | stmtToRust_while_has_open_brace: countChar >= 1 | INVARIANT | P0 |
+| N22.3 | stmtToRust_for_eq_desugar: for = init + while | EQUIVALENCE | P0 |
+| N22.3 | generateRustHeader_no_helper: no power helper when disabled | SOUNDNESS | P0 |
+| N22.3 | countChar infrastructure (3 shared lemmas) | INVARIANT | P1 |
+| N22.4 | Rust cast uses postfix as syntax | SOUNDNESS | P0 |
+| N22.4 | stmtToRust if/while without parentheses around condition | SOUNDNESS | P0 |
+| N22.4 | exprToRust litBool outputs keyword (true/false member check) | SOUNDNESS | P0 |
+| N22.4 | stmtToRust array access includes usize cast | SOUNDNESS | P1 |
 
 > **Nota**: Propiedades en lenguaje natural (intención de diseño).
 > Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
 
 #### Bloques
 
-- [x] **Call Types**: N15.1 — closed 2026-03-11
-- [x] **Call Eval + FuelMono**: N15.2 — closed 2026-03-11
-- [x] **Call Simulation + Bridge**: N15.3 — closed 2026-03-11
+- [x] **B23: Expression + Structural + Rust-Specific**: N22.1, N22.3, N22.4 — closed 2026-03-27
+- [x] **B24: Balanced Braces**: N22.2 — closed 2026-03-27
 
-### Full Inductive Roundtrip
+### Integration + Audit
 
-**Contents**: Close the inductive roundtrip proof for ALL WFStmt/WFExpr constructors. Strategy: expression roundtrip first (WFExpr induction, no mutual recursion needed), then statement roundtrip using expression roundtrip as lemma. Parser fuel based on string length for robustness.
+**Contents**: Integration tests, non-vacuity witnesses, zero sorry audit, spec_audit, wiring_check, v3.2.0 tag.
 
 **Files**:
-- `TrustLean/MicroC/RoundtripExpr.lean`
-- `TrustLean/MicroC/RoundtripStmt.lean`
-- `TrustLean/MicroC/RoundtripMaster.lean`
+- `TrustLean/Tests/RustBackendIntegration.lean`
 
-#### DAG (v3.0.0)
+#### DAG (v3.2.0)
 
 | Nodo | Tipo | Deps | Status |
 |------|------|------|--------|
-| N16.1 Expression Roundtrip (all WFExpr) | CRIT | — | completed ✓ |
-| N16.2 Statement Roundtrip (all WFStmt) | CRIT | N16.1 | completed ✓ |
-| N16.3 Master Roundtrip Theorem | CRIT | N16.2 | completed ✓ |
+| N23.1 Integration Tests + Non-Vacuity Witnesses | HOJA | N22.1, N22.2, N22.3, N22.4 | completed ✓ |
+| N23.2 Zero Sorry Audit + spec_audit + v3.2.0 Tag | HOJA | N23.1 | completed ✓ |
 
-#### Formal Properties (v3.0.0)
+#### Formal Properties (v3.2.0)
 
 | Nodo | Propiedad | Tipo | Prioridad |
 |------|-----------|------|-----------|
-| N16.1 | Expression roundtrip per constructor: WFExpr e -> parse(print(e)) = some e | EQUIVALENCE | P0 |
-| N16.1 | Parser fuel sufficiency: string length sufficient for all WFExpr | INVARIANT | P0 |
-| N16.2 | Statement roundtrip per constructor: WFStmt s -> parse(print(s)) = some s | EQUIVALENCE | P0 |
-| N16.2 | Argument list roundtrip: WF args -> parseArgs(printArgs(args)) = some args | EQUIVALENCE | P1 |
-| N16.3 | Master roundtrip: forall s, WFStmt s -> parseMicroC(microCToString s) = some s | EQUIVALENCE | P0 |
-| N16.3 | Non-vacuity: complex program with all constructors roundtrips | SOUNDNESS | P0 |
+| N23.1 | Smoke tests: all 12 Stmt constructors produce valid Rust | SOUNDNESS | P0 |
+| N23.1 | Non-vacuity: end-to-end with nested control flow | SOUNDNESS | P0 |
+| N23.2 | Zero sorry across entire project | SOUNDNESS | P0 |
+| N23.2 | spec_audit: 0 T1, 0 T1.5 | SOUNDNESS | P0 |
+| N23.2 | wiring_check: 0 W1 | SOUNDNESS | P0 |
 
 > **Nota**: Propiedades en lenguaje natural (intención de diseño).
 > Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
 
 #### Bloques
 
-- [x] **Expression Roundtrip**: N16.1 — closed 2026-03-11
-- [x] **Statement Roundtrip**: N16.2 — closed 2026-03-12
-- [x] **Master Roundtrip**: N16.3 — closed 2026-03-12
-
-### v3.0 Integration + Audit
-
-**Contents**: Oracle tests for Int64 wrapping and call evaluation. Non-vacuity witnesses for all gate theorems. Zero sorry audit and spec_audit clean across entire project.
-
-**Files**:
-- `TrustLean/MicroC/Integration_v3.lean`
-
-#### DAG (v3.0.0)
-
-| Nodo | Tipo | Deps | Status |
-|------|------|------|--------|
-| N17.1 Oracle Tests + Compatibility | PAR | N14.3, N15.3, N16.3 | completed ✓ |
-| N17.2 Non-Vacuity + Zero Sorry Audit | HOJA | N17.1 | completed ✓ |
-
-#### Formal Properties (v3.0.0)
-
-| Nodo | Propiedad | Tipo | Prioridad |
-|------|-----------|------|-----------|
-| N17.1 | Oracle tests cover Int64 boundary values | SOUNDNESS | P0 |
-| N17.1 | Oracle tests cover call evaluation with arguments | SOUNDNESS | P0 |
-| N17.2 | Zero sorry across entire project | SOUNDNESS | P0 |
-| N17.2 | spec_audit: 0 T1, 0 T1.5 issues | SOUNDNESS | P0 |
-
-> **Nota**: Propiedades en lenguaje natural (intención de diseño).
-> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
-
-#### Bloques
-
-- [x] **Integration + Audit**: N17.1, N17.2 — closed 2026-03-12
+- [x] **B25: Integration + Audit**: N23.1, N23.2 — closed 2026-03-27
 
 ---
 

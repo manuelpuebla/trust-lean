@@ -140,34 +140,34 @@ def cCode := generateCFunction defaultCConfig "compute"
 
 | Metric | Value |
 |--------|-------|
-| Lines of Code | 15,237 |
-| Theorems + lemmas | 839 |
-| @[simp] lemmas | 419 |
+| Lines of Code | 15,836 |
+| Theorems + lemmas | 879 |
+| @[simp] lemmas | 430 |
 | Sorry | **0** |
 | Axioms | **0** |
-| Tests (#eval / example) | 410+ |
+| Source files | 73 |
 | Build | 632 jobs |
 
 See [BENCHMARKS.md](BENCHMARKS.md) for full verification criteria and results. See [TESTS_POST.md](TESTS_POST.md) for adversarial post-hoc testing report.
 
 ## What's New in v3.1.0
 
-### Changes Since v3.0.0
+### Changes Since v3.1.0
 
-| Metric | v3.0.0 | v3.1.0 | Change |
+| Metric | v3.1.0 | v3.2.0 | Change |
 |--------|--------|--------|--------|
-| **Lines of Code** | ~11,200 | **15,237** | +4,037 LOC |
-| **Theorems + lemmas** | ~550 | **839** | +289 |
+| **Lines of Code** | 15,237 | **15,836** | +599 LOC |
+| **Theorems + lemmas** | 839 | **879** | +40 |
 | **Sorry** | 0 | **0** | Same |
 | **Axioms** | 0 | **0** | Same |
-| **Build** | ~430 jobs | **632 jobs** | +202 |
+| **Source files** | 71 | **73** | +2 |
 
-### Key Achievements (v3.0.0 -> v3.1.0)
+### Key Achievements (v3.1.0 -> v3.2.0)
 
-1. **Bitwise + Casting IR Extension** — 5 new BinOps (band, bor, bxor, bshl, bshr) + 2 UnaryOps (widen32to64, trunc64to32) propagated through all layers
-2. **Unsigned Evaluators** — `evalMicroC_uint32`/`evalMicroC_uint64` with `wrapWidth` foundation, fuel monotonicity, conditional/unconditional agreement split, and lifting-based simulation
-3. **Plonky3 Field Bridges** — Mersenne31 reduce (bit-splitting), BabyBear Montgomery reduce (REDC), KoalaBear reduce, Goldilocks reduce — verified field reduction programs
-4. **Int64 Agreement for bitwise** — 7 new unconditional agreement theorems (bitwise ops never overflow)
+1. **Verified Rust Backend Properties** — 40 formal properties in `RustBackendProperties.lean`: determinism, balanced braces (hybrid induction+decide), expression emission, control flow structure
+2. **Rust Keyword Sanitization** — 53 Rust keywords (39 strict + 14 reserved, Rust 2021 edition), `sanitizeIdentifierRust` with 4 theorems (not_keyword, nonempty, valid, idempotent)
+3. **Shared countChar Infrastructure** — `countChar`, `countChar_empty`, `countChar_append` moved to Common.lean for cross-backend reuse
+4. **Rust-Specific Formal Properties** — Cast postfix (`as`), no-parens if/while, boolean keyword emission (`true`/`false` not `1`/`0`), `as usize` array indexing
 
 ### Version History
 
@@ -178,6 +178,7 @@ v1.2.0 (Feb 21)    0 axioms    0 sorry    Industrial CBackend + formal propertie
 v2.0.0 (Mar 10)    0 axioms    0 sorry    MicroC: AST, evaluator, simulation, roundtrip
 v3.0.0 (Mar 12)    0 axioms    0 sorry    Int64 overflow, call semantics, full inductive roundtrip
 v3.1.0 (Mar 22)    0 axioms    0 sorry    Bitwise ops, unsigned MicroC, Plonky3 reductions
+v3.2.0 (Mar 27)    0 axioms    0 sorry    Verified Rust Backend (40 formal properties)
 ```
 
 ## Future Work (v4.0+)
@@ -211,4 +212,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**Trust-Lean v3.1.0** — Every compilation step is a theorem. 839 theorems, 0 sorry, 0 axioms.
+**Trust-Lean v3.2.0** — Every compilation step is a theorem. 879 theorems, 0 sorry, 0 axioms.
