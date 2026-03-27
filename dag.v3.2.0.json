@@ -1,0 +1,294 @@
+{
+  "version": "v3.2.0",
+  "project": "Trust-Lean",
+  "phases": [
+    {
+      "id": "fase4",
+      "name": "Rust Sanitization Foundation",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N21.1",
+          "name": "Rust Keywords + Shared countChar Infrastructure",
+          "type": "FUND",
+          "status": "completed",
+          "files": [
+            "TrustLean/Backend/Common.lean"
+          ],
+          "deps": [],
+          "blocks": [],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 4,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N21.2",
+          "name": "Sanitization Theorems (not_keyword, nonempty, valid, idempotent)",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/Backend/Common.lean"
+          ],
+          "deps": [
+            "N21.1"
+          ],
+          "blocks": [],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 4,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B21",
+          "name": "Keywords + countChar Infrastructure",
+          "nodes": [
+            "N21.1"
+          ],
+          "status": "pending",
+          "closed_at": null
+        },
+        {
+          "id": "B22",
+          "name": "Sanitization Theorems",
+          "nodes": [
+            "N21.2"
+          ],
+          "status": "pending",
+          "closed_at": null
+        }
+      ]
+    },
+    {
+      "id": "fase5",
+      "name": "RustBackendProperties",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N22.1",
+          "name": "Expression Emission Properties (determinism, litInt, litBool)",
+          "type": "PAR",
+          "status": "completed",
+          "files": [
+            "TrustLean/Backend/RustBackendProperties.lean"
+          ],
+          "deps": [
+            "N21.2"
+          ],
+          "blocks": [],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 6,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N22.2",
+          "name": "Balanced Braces (stmtBracePairs + general theorem + examples)",
+          "type": "CRIT",
+          "status": "completed",
+          "files": [
+            "TrustLean/Backend/RustBackendProperties.lean"
+          ],
+          "deps": [
+            "N21.1"
+          ],
+          "blocks": [],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 5,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N22.3",
+          "name": "Structural Properties (for desugaring, header, control flow braces)",
+          "type": "PAR",
+          "status": "completed",
+          "files": [
+            "TrustLean/Backend/RustBackendProperties.lean"
+          ],
+          "deps": [
+            "N21.1"
+          ],
+          "blocks": [],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 3,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N22.4",
+          "name": "Rust-Specific Properties (cast postfix, no parens, let mut, usize)",
+          "type": "PAR",
+          "status": "completed",
+          "files": [
+            "TrustLean/Backend/RustBackendProperties.lean"
+          ],
+          "deps": [
+            "N21.2"
+          ],
+          "blocks": [],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 4,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B23",
+          "name": "Expression + Structural + Rust-Specific (AGENT_TEAM)",
+          "nodes": [
+            "N22.1",
+            "N22.3",
+            "N22.4"
+          ],
+          "status": "pending",
+          "closed_at": null
+        },
+        {
+          "id": "B24",
+          "name": "Balanced Braces (Induction)",
+          "nodes": [
+            "N22.2"
+          ],
+          "status": "pending",
+          "closed_at": null
+        }
+      ]
+    },
+    {
+      "id": "fase6",
+      "name": "Integration + Audit",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "N23.1",
+          "name": "Integration Tests + Non-Vacuity Witnesses",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [
+            "TrustLean/Tests/RustBackendIntegration.lean"
+          ],
+          "deps": [
+            "N22.1",
+            "N22.2",
+            "N22.3",
+            "N22.4"
+          ],
+          "blocks": [],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 2,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        },
+        {
+          "id": "N23.2",
+          "name": "Zero Sorry Audit + spec_audit + v3.2.0 Tag",
+          "type": "HOJA",
+          "status": "completed",
+          "files": [],
+          "deps": [
+            "N23.1"
+          ],
+          "blocks": [],
+          "metrics": {
+            "loc": 0,
+            "theorems": 0,
+            "lemmas": 0,
+            "defs": 0,
+            "sorry": 0
+          },
+          "properties": {
+            "total": 3,
+            "passing": 0,
+            "failing": 0,
+            "not_runnable": 0
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "id": "B25",
+          "name": "Integration + Audit",
+          "nodes": [
+            "N23.1",
+            "N23.2"
+          ],
+          "status": "pending",
+          "closed_at": null
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "created": "2026-02-20T19:23:56Z",
+    "updated": "2026-03-27T19:08:03Z",
+    "total_nodes": 8,
+    "completed_nodes": 0
+  }
+}

@@ -1,6 +1,146 @@
 # Trust-Lean: Architecture
 
-## Current Version: v3.2.0 (completed)
+## Current Version: v4.0.0
+
+### Scope
+
+MicroRust targets the same imperative subset as MicroC: scalars, arrays, loops, conditionals, function calls. Ownership, borrowing, lifetimes, traits, and generics are out of scope. The emitted Rust uses only owned values (`let mut x: i64`).
+
+### Design Decisions (v4.0.0)
+
+1. **Shared AST (no rename)**: `MicroCStmt`/`MicroCExpr`/`MicroCEnv` and ALL evaluators (`evalMicroC`, `evalMicroC_int64`, `evalMicroC_uint32/64`, `evalMicroC_withCalls`) are language-neutral. Rust wrapping arithmetic = MicroC wrapping arithmetic (verified: both use `wrapInt64`/`wrapUInt32`/`wrapUInt64`). MicroRust imports these directly. Type aliases `MicroRustStmt := MicroCStmt` etc. in `Defs.lean` for readability.
+2. **TrustLean/MicroRust/ directory**: New files for Rust-specific layers. Imports `TrustLean.MicroC.*` for shared infrastructure. No MicroC files modified.
+3. **varNameToRust**: Uses `sanitizeIdentifierRust` (53 Rust keywords, `_tl_` prefix). Proven not_keyword, nonempty, valid, idempotent in Common.lean (v3.2).
+4. **VarNameInjectiveRust**: Same pattern as MicroC — assumed as hypothesis in simulation, not proved universally. `sanitizeIdentifierRust` is non-injective (L-616) but injective on practical variable sets.
+5. **microRustBridge**: `∀ v, env v = mcEnv (varNameToRust v)`. Same structure as `microCBridge` but with Rust sanitizer.
+6. **WellFormedBaseRust**: `sanitizeIdentifierRust name = name` (vs `sanitizeIdentifier` for C). Both `"mem"` passes both sanitizers (verified by `native_decide`).
+7. **Rust syntax in PrettyPrint/Parser**: No parens `if`/`while`, postfix `as i64`/`as i32` casts, `as usize` array index, `true`/`false` booleans. Fully parenthesized expressions (same as MicroC).
+8. **Two independent chains**: Chain A (semantic: Translation → Bridge → Simulation) and Chain B (syntactic: PrettyPrint → Parser → Roundtrip) share no definitions until Integration. Can interleave execution.
+9. **12 modules reused at zero cost**: AST, Eval, FuelMono, Int64, Int64Eval, Int64Agreement, Unsigned, UnsignedEval, UnsignedAgreement, UnsignedFuelMono, CallTypes, CallEval (3,524 LOC, 46% of MicroC).
+
+### Fase 7: MicroRust Translation + Bridge + Simulation
+
+**Contents**: Semantic core: translate Stmt to MicroRust (shared AST, Rust identifiers), bridge predicate, and master simulation theorem stmtToMicroRust_correct.
+
+**Files**:
+- `TrustLean/MicroRust/Defs.lean`
+- `TrustLean/MicroRust/Translation.lean`
+- `TrustLean/MicroRust/Bridge.lean`
+- `TrustLean/MicroRust/Simulation.lean`
+- `TrustLean/MicroRust/CallSimulation.lean`
+- `TrustLean/MicroRust/UnsignedSimulation.lean`
+
+#### DAG (v4.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N24.1 MicroRust Defs + Translation (varNameToRust, stmtToMicroRust) | FUND | — | pending |
+| N24.2 microRustBridge + Correspondence Lemmas | FUND | N24.1 | pending |
+| N24.3 stmtToMicroRust_correct (GATE Simulation Theorem) | CRIT | N24.1, N24.2 | pending |
+| N24.4 CallSimulation + UnsignedSimulation for MicroRust (Lifting) | PAR | N24.3 | pending |
+
+#### Formal Properties (v4.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N24.1 | stmtToMicroRust total on all Stmt constructors | INVARIANT | P0 |
+| N24.1 | exprToMicroRust consistent with exprToMicroC (same AST output) | EQUIVALENCE | P0 |
+| N24.1 | varNameToRust uses sanitizeIdentifierRust (not sanitizeIdentifier) | INVARIANT | P0 |
+| N24.2 | microRustBridge preserved through environment updates | PRESERVATION | P0 |
+| N24.2 | exprToMicroRust_bridge: expression evaluation respects bridge | SOUNDNESS | P0 |
+| N24.3 | stmtToMicroRust_correct: forward simulation for all non-OOF outcomes | SOUNDNESS | P0 |
+| N24.3 | WellFormedArrayBasesRust: store/load bases well-formed for Rust sanitizer | INVARIANT | P0 |
+| N24.3 | Non-vacuity: concrete program simulation succeeds | SOUNDNESS | P0 |
+| N24.4 | stmtToMicroRust_correct_withCalls: lifting to call-aware evaluator | SOUNDNESS | P0 |
+| N24.4 | stmtToMicroRust_correct_uint32/64: lifting to unsigned evaluators | SOUNDNESS | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [ ] **MicroRust Defs + Translation**: N24.1
+- [ ] **Bridge + Correspondence**: N24.2
+- [ ] **Simulation (GATE)**: N24.3
+- [ ] **Call + Unsigned Simulation**: N24.4
+
+### MicroRust Pretty-Printer + Parser + Roundtrip
+
+**Contents**: Syntactic chain: Rust-syntax emission, Lean.Data.Parsec parser, and full roundtrip theorem parseMicroRust(microRustToString s) = some s.
+
+**Files**:
+- `TrustLean/MicroRust/PrettyPrint.lean`
+- `TrustLean/MicroRust/Parser.lean`
+- `TrustLean/MicroRust/RoundtripExpr.lean`
+- `TrustLean/MicroRust/RoundtripStmt.lean`
+- `TrustLean/MicroRust/RoundtripMaster.lean`
+
+#### DAG (v4.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N25.1 microRustToString Pretty-Printer (Rust syntax) | PAR | — | pending |
+| N25.2 parseMicroRust Parser (Rust syntax) | PAR | — | pending |
+| N25.3 Expression Roundtrip (WFExprRust induction) | CRIT | N25.1, N25.2 | pending |
+| N25.4 Statement Roundtrip + Master (WFStmtRust induction + master_roundtrip_rust) | CRIT | N25.3 | pending |
+
+#### Formal Properties (v4.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N25.1 | microRustToString produces balanced braces | INVARIANT | P0 |
+| N25.1 | microRustToString uses Rust syntax (no parens if/while, as casts) | INVARIANT | P0 |
+| N25.2 | parseMicroRust terminates on all inputs | INVARIANT | P0 |
+| N25.3 | parseMicroRustExpr(microRustExprToString e) = some e for WFExprRust | EQUIVALENCE | P0 |
+| N25.4 | parseMicroRust(microRustToString s) = some s for WFStmtRust | EQUIVALENCE | P0 |
+| N25.4 | master_roundtrip_rust: capstone roundtrip theorem | EQUIVALENCE | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [ ] **PrettyPrint + Parser (AGENT_TEAM)**: N25.1, N25.2
+- [ ] **Expression Roundtrip**: N25.3
+- [ ] **Statement Roundtrip + Master (GATE)**: N25.4
+
+### Integration + Audit
+
+**Contents**: End-to-end integration tests, non-vacuity witnesses, compatibility verification with MicroC pipeline, zero sorry audit, v4.0.0 tag.
+
+**Files**:
+- `TrustLean/MicroRust/Integration.lean`
+
+#### DAG (v4.0.0)
+
+| Nodo | Tipo | Deps | Status |
+|------|------|------|--------|
+| N26.1 Integration Tests + Non-Vacuity + Compatibility | HOJA | N24.3, N24.4, N25.4 | pending |
+| N26.2 Zero Sorry Audit + spec_audit + v4.0.0 Tag | HOJA | N26.1 | pending |
+
+#### Formal Properties (v4.0.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N26.1 | Smoke tests: all 12 constructors produce valid Rust | SOUNDNESS | P0 |
+| N26.1 | Non-vacuity: end-to-end with nested control flow | SOUNDNESS | P0 |
+| N26.1 | Compatibility: stmtToMicroRust on same Stmt as stmtToMicroC produces semantically equivalent MicroC programs | EQUIVALENCE | P1 |
+| N26.2 | Zero sorry across entire project | SOUNDNESS | P0 |
+| N26.2 | spec_audit: 0 T1, 0 T1.5 | SOUNDNESS | P0 |
+| N26.2 | wiring_check: 0 W1 | SOUNDNESS | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+> Los stubs ejecutables están en BENCHMARKS.md § Formal Properties.
+
+#### Bloques
+
+- [ ] **Integration + Audit**: N26.1, N26.2
+
+---
+
+## Previous Versions
+
+### v3.2.0
 
 ### Design Decisions (v3.2.0)
 
@@ -126,9 +266,6 @@
 
 - [x] **B25: Integration + Audit**: N23.1, N23.2 — closed 2026-03-27
 
----
-
-## Previous Versions
 
 ### v2.0.0
 
