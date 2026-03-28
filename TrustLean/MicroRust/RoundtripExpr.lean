@@ -780,9 +780,98 @@ theorem matchLiteral_exact (pat rest : List Char) :
   | nil => simp [matchLiteral]
   | cons c cs ih => simp [matchLiteral, List.cons_append, BEq.beq, ih]
 
+/-! ## Additional helpers for the core proof -/
+
+/-- list_head_eq: if l = c :: cs then l.head = c. -/
+private theorem list_head_eq_of_cons_r {l : List Char} {c : Char} {cs : List Char}
+    (h : l = c :: cs) : ∀ (hne : l ≠ []), l.head hne = c := by
+  intro hne; subst h; rfl
+
+/-- First char of a printed WFExprRust is neither '-' nor '!'. -/
+private theorem rustPrint_first_not_neg_bang (e : MicroCExpr) (he : WFExprRust e) :
+    ∀ c cs, (microRustExprToString e).toList = c :: cs → c ≠ '-' ∧ c ≠ '!' := by
+  intro c cs heq
+  cases he with
+  | litInt n =>
+    simp [microRustExprToString_litInt] at heq
+    split at heq
+    · simp [String.toList_append] at heq; obtain ⟨rfl, _⟩ := heq
+      exact ⟨by decide, by decide⟩
+    · have hne := natToChars_ne_nil n.toNat
+      match hcs : natToChars n.toNat with
+      | [] => exact absurd hcs hne
+      | c' :: _ =>
+        simp [hcs] at heq; rw [← heq.1]
+        have hd := natToChars_all_digits n.toNat c' (by rw [hcs]; exact List.mem_cons_self ..)
+        exact ⟨by intro h; subst h; simp [Char.isDigit] at hd,
+               by intro h; subst h; simp [Char.isDigit] at hd⟩
+  | litBool b =>
+    cases b <;> simp [microRustExprToString] at heq <;> obtain ⟨rfl, _⟩ := heq <;>
+      exact ⟨by decide, by decide⟩
+  | varRef name hne hstart _ _ =>
+    simp [microRustExprToString_varRef] at heq
+    have hne' := toList_ne_nil_of_ne_empty_r name hne
+    match hcs : name.toList with
+    | [] => exact absurd hcs hne'
+    | c' :: _ =>
+      have hhead := list_head_eq_of_cons_r hcs
+      have hstart' := hstart; simp only [hhead] at hstart'
+      rw [hcs] at heq; simp at heq; rw [← heq.1]
+      cases hstart' with
+      | inl h =>
+        exact ⟨by intro h'; subst h'; simp [Char.isAlpha, Char.isUpper, Char.isLower] at h,
+               by intro h'; subst h'; simp [Char.isAlpha, Char.isUpper, Char.isLower] at h⟩
+      | inr h => subst h; exact ⟨by decide, by decide⟩
+  | binOp _ _ _ _ _ =>
+    simp [microRustExprToString_binOp, String.toList_append] at heq
+    obtain ⟨rfl, _⟩ := heq; exact ⟨by decide, by decide⟩
+  | unaryOp op _ _ =>
+    cases op <;> simp [microRustExprToString, String.toList_append] at heq <;>
+      obtain ⟨rfl, _⟩ := heq <;>
+      exact ⟨by decide, by decide⟩
+  | powCall _ _ _ =>
+    simp [microRustExprToString_powCall, String.toList_append] at heq
+    obtain ⟨rfl, _⟩ := heq; exact ⟨by decide, by decide⟩
+  | arrayAccess _ _ hb _ hbv =>
+    obtain ⟨vname, rfl⟩ := hbv
+    simp [microRustExprToString_arrayAccess, microRustExprToString_varRef] at heq
+    cases hb with
+    | varRef _ hne_v hstart_v _ _ =>
+      have hne_v' := toList_ne_nil_of_ne_empty_r vname hne_v
+      match hcs_v : vname.toList with
+      | [] => exact absurd hcs_v hne_v'
+      | cv :: _ =>
+        have hhead := list_head_eq_of_cons_r hcs_v
+        have hst := hstart_v; simp only [hhead] at hst
+        simp [hcs_v] at heq; rw [← heq.1]
+        cases hst with
+        | inl h =>
+          exact ⟨by intro h'; subst h'; simp [Char.isAlpha, Char.isUpper, Char.isLower] at h,
+                 by intro h'; subst h'; simp [Char.isAlpha, Char.isUpper, Char.isLower] at h⟩
+        | inr h => subst h; exact ⟨by decide, by decide⟩
+
+/-- ExprSafeR for the "rest after printing lhs" in a binOp context. -/
+private theorem exprSafeR_binop_mid (op : MicroCBinOp)
+    (rhs_print : List Char) (rest : List Char) :
+    ExprSafeR (' ' :: (microRustBinOpToString op).toList ++
+      (' ' :: rhs_print ++ (')' :: rest))) := by
+  refine ⟨Or.inr ⟨' ', _, rfl, by native_decide⟩,
+          Or.inr ⟨' ', _, rfl, by native_decide, by native_decide, by decide⟩, ?_, ?_⟩ <;>
+  · intro cs; cases op <;> simp [microRustBinOpToString, skipWsR]
+
+/-- skipWsR on natToChars: digits are non-ws so skipWsR is identity. -/
+private theorem skipWsR_natToChars (n : Nat) (rest : List Char) :
+    skipWsR (natToChars n ++ rest) = natToChars n ++ rest := by
+  have hne := natToChars_ne_nil n
+  match hcs : natToChars n with
+  | [] => exact absurd hcs hne
+  | c :: cs =>
+    have hc := isDigit_not_ws_r c (natToChars_all_digits n c (by rw [hcs]; exact List.mem_cons_self ..))
+    simp [List.cons_append, skipWsR_nonws c (cs ++ rest) hc]
+
 /-! ## Core: Expression roundtrip with rest -/
 
-set_option maxHeartbeats 800000 in
+set_option maxHeartbeats 1600000 in
 /-- Core roundtrip lemma for Rust expressions: parsing the printed form of a
     well-formed expression with arbitrary safe remainder recovers the original. -/
 theorem rustExpr_roundtrip_with_rest (e : MicroCExpr) (he : WFExprRust e)
@@ -790,20 +879,547 @@ theorem rustExpr_roundtrip_with_rest (e : MicroCExpr) (he : WFExprRust e)
     (fuel : Nat) (hfuel : fuel ≥ rustExprDepth e)
     (rest : List Char) (hrest : ExprSafeR rest) :
     pRustExprF fuel ((microRustExprToString e).toList ++ rest) = some (e, rest) := by
-  sorry
-  /-  Proof structure: induction he generalizing fuel rest with
-      | litInt n => (negative: pRustExprF_paren + pRustParenF_neg_digit + pNatR_natToChars;
-                     non-negative: pRustExprF_digit + pNatR_natToChars)
-      | litBool b => (pRustExprF_ident + pIdentR_exact, dispatch "true"/"false")
-      | varRef name .. => (pRustExprF_ident + pIdentR_exact, power_match_impossible, name ≠ kw)
-      | binOp op l r .. => (pRustExprF_paren + pRustParenF_fallthrough + IH_l + pBinOpR_roundtrip + IH_r)
-      | unaryOp op e .. => (cases op; neg: pRustParenF_neg_nondigit + IH; lnot: pRustParenF_lnot + IH;
-                            widen/trunc: pRustParenF_fallthrough + IH + cast suffix match)
-      | powCall base n .. => (pRustExprF_power + IH_base + pNatR_natToChars)
-      | arrayAccess base idx .. => (base=varRef, pRustExprF_ident + pIdentR_exact, '[' branch,
-                                    IH_idx + matchLiteral_exact for "as usize]")
-      All equation lemmas and helpers are in this file (lines 510-782).
-      The proof mirrors MicroC/RoundtripExpr.lean:expr_roundtrip_with_rest (500-799). -/
+  induction he generalizing fuel rest with
+  | litInt n =>
+    have h1 : fuel ≥ 1 := Nat.le_trans (rustExprDepth_pos (.litInt n)) hfuel
+    have hfne : fuel ≠ 0 := by omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hfne
+    by_cases hn : n < 0
+    · -- Negative: print = "(-" ++ natToChars(n.natAbs) ++ ")"
+      simp only [microRustExprToString_litInt, hn, ite_true,
+        String.toList_append, String.toList_ofList, List.append_assoc,
+        strR_lp, strR_rp, strR_dash, List.cons_append, List.nil_append]
+      simp only [pRustExprF_paren]
+      rw [skipWsR_nonws '-' _ ⟨by decide, by decide, by decide, by decide⟩]
+      have hne := natToChars_ne_nil n.natAbs
+      match hcs : natToChars n.natAbs with
+      | [] => exact absurd hcs hne
+      | c :: cs =>
+        have hcd := natToChars_all_digits n.natAbs c (by rw [hcs]; exact List.mem_cons_self ..)
+        simp only [List.cons_append]
+        rw [pRustParenF_neg_digit k c (cs ++ ')' :: rest) hcd]
+        rw [show c :: (cs ++ ')' :: rest) = (c :: cs) ++ ')' :: rest from by simp [List.cons_append]]
+        rw [← hcs]
+        rw [pNatR_natToChars n.natAbs (')' :: rest) (Or.inr ⟨')', rest, rfl, by native_decide⟩)]
+        simp only []
+        rw [skipWsR_nonws ')' rest ⟨by decide, by decide, by decide, by decide⟩]
+        congr 1; congr 1
+        match n, hn with
+        | .negSucc m, _ => simp [Int.natAbs, Int.negSucc_eq]
+    · -- Non-negative: print = natToChars(n.toNat)
+      simp only [microRustExprToString_litInt, hn, ite_false, String.toList_ofList]
+      have hne := natToChars_ne_nil n.toNat
+      match hcs : natToChars n.toNat with
+      | [] => exact absurd hcs hne
+      | c :: cs =>
+        have hcd := natToChars_all_digits n.toNat c (by rw [hcs]; exact List.mem_cons_self ..)
+        simp only [List.cons_append]
+        rw [pRustExprF_digit k c (cs ++ rest) hcd]
+        rw [show c :: (cs ++ rest) = natToChars n.toNat ++ rest from by rw [hcs, List.cons_append]]
+        rw [pNatR_natToChars n.toNat rest hrest.1]
+        simp only []
+        congr 1; congr 1; congr 1
+        exact Int.toNat_of_nonneg (Int.not_lt.mp hn)
+  | litBool b =>
+    have h1 : fuel ≥ 1 := Nat.le_trans (rustExprDepth_pos (.litBool b)) hfuel
+    have hfne : fuel ≠ 0 := by omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hfne
+    cases b with
+    | true =>
+      have htl : ("true" : String).toList = ['t', 'r', 'u', 'e'] := by native_decide
+      simp only [microRustExprToString_litBool_true, htl, List.cons_append, List.nil_append]
+      have hnp : ∀ tail, 't' :: ('r' :: 'u' :: 'e' :: rest) ≠
+          'p' :: 'o' :: 'w' :: 'e' :: 'r' :: '(' :: tail := by
+        intro tail h; exact absurd (List.cons.inj h).1 (by decide)
+      rw [pRustExprF_ident k 't' ('r' :: 'u' :: 'e' :: rest)
+        (by native_decide) (Or.inl (by native_decide)) hnp]
+      simp only [pRustExprF.pRustIdentF]
+      rw [show ('t' :: 'r' :: 'u' :: 'e' :: rest) = "true".toList ++ rest from by
+          simp [htl, List.cons_append, List.nil_append]]
+      rw [pIdentR_exact "true" rest (by decide) (by simp [htl])
+          (by intro c hc; simp [htl] at hc; rcases hc with rfl | rfl | rfl | rfl <;> decide)
+          hrest.2.1]
+      simp
+    | false =>
+      have hfl : ("false" : String).toList = ['f', 'a', 'l', 's', 'e'] := by native_decide
+      simp only [microRustExprToString_litBool_false, hfl, List.cons_append, List.nil_append]
+      have hnp : ∀ tail, 'f' :: ('a' :: 'l' :: 's' :: 'e' :: rest) ≠
+          'p' :: 'o' :: 'w' :: 'e' :: 'r' :: '(' :: tail := by
+        intro tail h; exact absurd (List.cons.inj h).1 (by decide)
+      rw [pRustExprF_ident k 'f' ('a' :: 'l' :: 's' :: 'e' :: rest)
+        (by native_decide) (Or.inl (by native_decide)) hnp]
+      simp only [pRustExprF.pRustIdentF]
+      rw [show ('f' :: 'a' :: 'l' :: 's' :: 'e' :: rest) = "false".toList ++ rest from by
+          simp [hfl, List.cons_append, List.nil_append]]
+      rw [pIdentR_exact "false" rest (by decide) (by simp [hfl])
+          (by intro c hc; simp [hfl] at hc; rcases hc with rfl | rfl | rfl | rfl | rfl <;> decide)
+          hrest.2.1]
+      simp
+  | varRef name hne hstart hcont hnot_kw =>
+    have h1 : fuel ≥ 1 := Nat.le_trans (rustExprDepth_pos (.varRef name)) hfuel
+    have hfne : fuel ≠ 0 := by omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hfne
+    simp only [microRustExprToString_varRef]
+    have hne' := toList_ne_nil_of_ne_empty_r name hne
+    match hcs : name.toList with
+    | [] => exact absurd hcs hne'
+    | c :: cs =>
+      have hhead := list_head_eq_of_cons_r hcs
+      have hstart' := hstart; simp only [hhead] at hstart'
+      have hcnd : c.isDigit = false := by
+        cases hstart' with
+        | inl h => exact isAlpha_not_digit c h
+        | inr h => subst h; native_decide
+      -- power( match impossible
+      have hnp : ∀ tail, c :: (cs ++ rest) ≠
+          'p' :: 'o' :: 'w' :: 'e' :: 'r' :: '(' :: tail := by
+        intro tail heq
+        have hce : c = 'p' := (List.cons.inj heq).1; subst hce
+        have htl : cs ++ rest = 'o' :: 'w' :: 'e' :: 'r' :: '(' :: tail :=
+          (List.cons.inj heq).2
+        have hident : ∀ ch ∈ cs, ch.isAlpha = true ∨ ch.isDigit = true ∨ ch = '_' :=
+          fun ch hmem => hcont ch (by rw [hcs]; exact List.mem_cons_of_mem _ hmem)
+        -- Case split on length of cs. If short, ident chars spill into rest,
+        -- contradicting ExprSafeR. If long, '(' appears in ident chars.
+        match cs, htl with
+        | [], htl =>
+          simp at htl; rw [htl] at hrest
+          cases hrest.2.1 with
+          | inl h => simp at h
+          | inr h =>
+            obtain ⟨c', _, hc', hna, _, _⟩ := h
+            have := (List.cons.inj hc').1; subst this
+            exact absurd (show ('o' : Char).isAlpha = true from by native_decide) (by rw [hna]; decide)
+        | [_], htl =>
+          simp at htl; rw [htl.2] at hrest
+          cases hrest.2.1 with
+          | inl h => simp at h
+          | inr h =>
+            obtain ⟨c', _, hc', hna, _, _⟩ := h
+            have := (List.cons.inj hc').1; subst this
+            exact absurd (show ('w' : Char).isAlpha = true from by native_decide) (by rw [hna]; decide)
+        | [_, _], htl =>
+          simp at htl; rw [htl.2.2] at hrest
+          cases hrest.2.1 with
+          | inl h => simp at h
+          | inr h =>
+            obtain ⟨c', _, hc', hna, _, _⟩ := h
+            have := (List.cons.inj hc').1; subst this
+            exact absurd (show ('e' : Char).isAlpha = true from by native_decide) (by rw [hna]; decide)
+        | [_, _, _], htl =>
+          simp at htl; rw [htl.2.2.2] at hrest
+          cases hrest.2.1 with
+          | inl h => simp at h
+          | inr h =>
+            obtain ⟨c', _, hc', hna, _, _⟩ := h
+            have := (List.cons.inj hc').1; subst this
+            exact absurd (show ('r' : Char).isAlpha = true from by native_decide) (by rw [hna]; decide)
+        | [_, _, _, _], htl =>
+          simp at htl; rw [htl.2.2.2.2] at hrest
+          have := hrest.2.2.2 tail
+          simp [skipWsR] at this
+        | a :: b :: c' :: d :: e5 :: cs5, htl =>
+          simp at htl
+          have h5 : e5 = '(' := htl.2.2.2.2.1; subst h5
+          have hmem : '(' ∈ a :: b :: c' :: d :: '(' :: cs5 := by simp
+          exact absurd (hident '(' hmem) (by
+            intro h; rcases h with h | h | h
+            · exact absurd h (by native_decide)
+            · exact absurd h (by native_decide)
+            · exact absurd h (by decide))
+      show pRustExprF (k + 1) (c :: (cs ++ rest)) = some (MicroCExpr.varRef name, rest)
+      rw [pRustExprF_ident k c (cs ++ rest) hcnd (by cases hstart' with
+        | inl h => exact Or.inl h
+        | inr h => exact Or.inr h) hnp]
+      simp only [pRustExprF.pRustIdentF]
+      have hpid : pIdentR (c :: (cs ++ rest)) = some (name, rest) := by
+        have harg : c :: (cs ++ rest) = name.toList ++ rest := by rw [hcs]; rfl
+        rw [harg]; exact pIdentR_exact name rest hne hstart hcont hrest.2.1
+      simp only [hpid]
+      simp [hnot_kw.1, hnot_kw.2]
+      -- Check for '[' and '(' in skipWsR rest
+      have ⟨hno_bracket, hno_paren⟩ := hrest.2.2
+      generalize hsr : skipWsR rest = sr at hno_bracket hno_paren
+      cases sr with
+      | nil => simp [hsr]
+      | cons c' cs' =>
+        by_cases h : c' = '['
+        · subst h; exact absurd rfl (hno_bracket cs')
+        · by_cases hp : c' = '('
+          · subst hp; exact absurd rfl (hno_paren cs')
+          · simp [hsr, h, hp]
+  | binOp op lhs rhs h_l h_r ih_l ih_r =>
+    -- Setup fuel
+    have h1 : fuel ≥ 1 := Nat.le_trans (rustExprDepth_pos (.binOp op lhs rhs)) hfuel
+    have hfne : fuel ≠ 0 := by omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hfne
+    have hfuel_l : k ≥ rustExprDepth lhs := by
+      simp only [rustExprDepth] at hfuel
+      have := Nat.le_max_left (rustExprDepth lhs) (rustExprDepth rhs); omega
+    have hfuel_r : k ≥ rustExprDepth rhs := by
+      simp only [rustExprDepth] at hfuel
+      have := Nat.le_max_right (rustExprDepth lhs) (rustExprDepth rhs); omega
+    -- NegLitDisam
+    have hs_l : NegLitDisamRust lhs := hs.1
+    have hs_r : NegLitDisamRust rhs := hs.2
+    -- Expand printed form and normalize string literals
+    simp only [microRustExprToString_binOp, String.toList_append, List.append_assoc,
+      strR_lp, strR_rp, strR_sp, List.cons_append, List.nil_append]
+    -- Dispatch: pRustExprF (k+1) ('(' :: ...) → pRustParenF k (skipWsR ...)
+    simp only [pRustExprF_paren]
+    -- Handle skipWsR of print(lhs) ++ mid_rest
+    have h_ne_l := rustPrint_ne_nil lhs h_l
+    match h_head_l : (microRustExprToString lhs).toList with
+    | [] => exact absurd h_head_l h_ne_l
+    | c_l :: cs_l =>
+      -- skipWsR (c_l :: cs_l ++ ...) = c_l :: cs_l ++ ... (c_l is non-ws)
+      have h_nonws_l := rustPrint_first_nonws lhs h_l c_l cs_l h_head_l
+      have ⟨h_not_neg_l, h_not_bang_l⟩ := rustPrint_first_not_neg_bang lhs h_l c_l cs_l h_head_l
+      -- mid_rest = ' ' :: opStr ++ ' ' :: print(rhs) ++ ')' :: rest
+      let mid := (' ' :: (microRustBinOpToString op).toList ++
+        (' ' :: (microRustExprToString rhs).toList ++ (')' :: rest)))
+      simp only [List.cons_append]
+      rw [skipWsR_nonws c_l _ h_nonws_l]
+      -- Fallthrough: first char c_l is not '!' or '-'
+      rw [pRustParenF_fallthrough k c_l _ h_not_bang_l h_not_neg_l]
+      -- Apply IH_l: parse lhs
+      have h_safe_mid : ExprSafeR mid :=
+        exprSafeR_binop_mid op (microRustExprToString rhs).toList rest
+      simp only [← List.cons_append, ← h_head_l]
+      rw [ih_l hs_l k hfuel_l mid h_safe_mid]
+      simp only []
+      -- Now handle pBinOpR (skipWsR mid)
+      have h_ne_r := rustPrint_ne_nil rhs h_r
+      match h_head_r : (microRustExprToString rhs).toList with
+      | [] => exact absurd h_head_r h_ne_r
+      | c_r :: cs_r =>
+        have h_nonws_r := rustPrint_first_nonws rhs h_r c_r cs_r h_head_r
+        have h_skipWsR_mid : skipWsR mid =
+            (microRustBinOpToString op).toList ++ (' ' :: c_r :: (cs_r ++ (')' :: rest))) := by
+          show skipWsR (' ' :: (microRustBinOpToString op).toList ++
+            (' ' :: (microRustExprToString rhs).toList ++ (')' :: rest))) = _
+          rw [h_head_r]
+          cases op <;> simp [microRustBinOpToString, skipWsR]
+        rw [h_skipWsR_mid]
+        -- Apply pBinOpR_roundtrip
+        have h_pBinOpR : pBinOpR ((microRustBinOpToString op).toList ++ (' ' :: c_r :: (cs_r ++ (')' :: rest)))) =
+            some (op, c_r :: (cs_r ++ (')' :: rest))) := by
+          exact pBinOpR_roundtrip op (c_r :: (cs_r ++ (')' :: rest)))
+            (fun c' cs' h => by rw [List.cons.injEq] at h; rw [← h.1]; exact h_nonws_r)
+        -- Apply IH_r: parse rhs with ExprSafeR (')' :: rest)
+        have h_eq_r : pRustExprF k (c_r :: (cs_r ++ (')' :: rest))) =
+            pRustExprF k ((microRustExprToString rhs).toList ++ (')' :: rest)) :=
+          congrArg (pRustExprF k) (by simp [h_head_r])
+        have h_ih_r := ih_r hs_r k hfuel_r (')' :: rest) (exprSafeR_rparen rest)
+        -- Dispatch: op first char is not 'a', so cast branches don't match
+        cases op <;> simp only [microRustBinOpToString, List.cons_append, List.nil_append,
+          toList_add_op, toList_sub_op, toList_mul_op, toList_eq_op, toList_lt_op,
+          toList_land_op, toList_lor_op, toList_band_op, toList_bor_op,
+          toList_bxor_op, toList_bshl_op, toList_bshr_op] at h_pBinOpR ⊢ <;> (
+          simp only [h_pBinOpR]
+          rw [h_eq_r, h_ih_r]
+          simp [skipWsR])
+  | unaryOp op e h_e ih_e =>
+    -- Setup fuel
+    have h1 : fuel ≥ 1 := Nat.le_trans (rustExprDepth_pos (.unaryOp op e)) hfuel
+    have hfne : fuel ≠ 0 := by omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hfne
+    have hfuel_e : k ≥ rustExprDepth e := by simp only [rustExprDepth] at hfuel; omega
+    cases op with
+    | lnot =>
+      -- print = "(!" ++ print(e) ++ ")"
+      simp only [microRustExprToString_unaryOp_lnot, String.toList_append,
+        List.append_assoc, strR_lp, strR_rp, strR_bang, List.cons_append, List.nil_append]
+      simp only [pRustExprF_paren]
+      -- skipWsR ('!' :: print(e) ++ ')' :: rest) = '!' :: print(e) ++ ')' :: rest
+      simp [skipWsR]
+      rw [pRustParenF_lnot]
+      -- Apply IH
+      rw [ih_e hs k hfuel_e (')' :: rest) (exprSafeR_rparen rest)]
+      simp [skipWsR]
+    | neg =>
+      -- NegLitDisam gives (∀ n, n ≥ 0 → e ≠ .litInt n) ∧ NegLitDisamRust e
+      have ⟨h_not_lit, hs_e⟩ := hs
+      -- print = "(-" ++ print(e) ++ ")"
+      simp only [microRustExprToString_unaryOp_neg, String.toList_append,
+        List.append_assoc, strR_lp, strR_rp, strR_dash, List.cons_append, List.nil_append]
+      simp only [pRustExprF_paren]
+      -- skipWsR ('-' :: print(e) ++ ')' :: rest) = '-' :: print(e) ++ ')' :: rest
+      simp [skipWsR]
+      -- pRustParenF sees '-' :: first_char_of_print(e) :: ...
+      -- Need to show first_char_of_print(e) is NOT a digit
+      have h_ne_e := rustPrint_ne_nil e h_e
+      match h_head_e : (microRustExprToString e).toList with
+      | [] => exact absurd h_head_e h_ne_e
+      | c_e :: cs_e =>
+        have h_not_digit : c_e.isDigit = false := by
+          match hd : c_e.isDigit with
+          | false => rfl
+          | true =>
+            exfalso
+            cases h_e with
+            | litInt n =>
+              simp [microRustExprToString_litInt] at h_head_e
+              split at h_head_e
+              · simp [String.toList_append] at h_head_e
+                obtain ⟨rfl, _⟩ := h_head_e
+                simp [Char.isDigit] at hd
+                exact absurd hd (by native_decide)
+              · exact absurd rfl (h_not_lit n (by omega))
+            | litBool b =>
+              cases b <;> simp [microRustExprToString] at h_head_e <;>
+                obtain ⟨rfl, _⟩ := h_head_e <;> simp [Char.isDigit] at hd <;>
+                exact absurd hd (by native_decide)
+            | varRef name hne_v hstart_v _ _ =>
+              simp [microRustExprToString_varRef] at h_head_e
+              have hne_v' := toList_ne_nil_of_ne_empty_r name hne_v
+              match hcs : name.toList with
+              | [] => exact absurd hcs hne_v'
+              | c' :: _ =>
+                have hhead := list_head_eq_of_cons_r hcs
+                have hst := hstart_v; simp only [hhead] at hst
+                rw [hcs] at h_head_e; simp at h_head_e; rw [← h_head_e.1] at hd
+                cases hst with
+                | inl h => exact absurd hd (by rw [isAlpha_not_digit c' h]; decide)
+                | inr h => subst h; simp [Char.isDigit] at hd
+            | binOp _ _ _ _ _ =>
+              simp [microRustExprToString_binOp, String.toList_append] at h_head_e
+              obtain ⟨rfl, _⟩ := h_head_e; simp [Char.isDigit] at hd
+            | unaryOp op' _ _ =>
+              cases op' <;> (
+                simp only [microRustExprToString_unaryOp_neg,
+                  microRustExprToString_unaryOp_lnot, microRustExprToString_unaryOp_widen,
+                  microRustExprToString_unaryOp_trunc] at h_head_e
+                simp only [String.toList_append] at h_head_e
+                obtain ⟨rfl, _⟩ := h_head_e
+                exact absurd hd (by native_decide))
+            | powCall _ _ _ =>
+              simp [microRustExprToString_powCall, String.toList_append] at h_head_e
+              obtain ⟨rfl, _⟩ := h_head_e; simp [Char.isDigit] at hd
+            | arrayAccess _ _ hb _ hbv =>
+              obtain ⟨vname, rfl⟩ := hbv
+              simp [microRustExprToString_arrayAccess, microRustExprToString_varRef] at h_head_e
+              cases hb with
+              | varRef _ hne_vv hstart_vv _ _ =>
+                have hne_vv' := toList_ne_nil_of_ne_empty_r vname hne_vv
+                match hcs_v : vname.toList with
+                | [] => exact absurd hcs_v hne_vv'
+                | cv :: _ =>
+                  have hhead_v := list_head_eq_of_cons_r hcs_v
+                  have hst := hstart_vv; simp only [hhead_v] at hst
+                  simp [hcs_v] at h_head_e; rw [← h_head_e.1] at hd
+                  cases hst with
+                  | inl h => exact absurd hd (by rw [isAlpha_not_digit cv h]; decide)
+                  | inr h => subst h; simp [Char.isDigit] at hd
+        simp only [List.cons_append]
+        rw [pRustParenF_neg_nondigit k c_e (cs_e ++ (')' :: rest)) h_not_digit]
+        -- Apply IH: rewrite c_e :: cs_e back to toList for IH
+        simp only [← List.cons_append, ← h_head_e]
+        rw [ih_e hs_e k hfuel_e (')' :: rest) (exprSafeR_rparen rest)]
+        simp [skipWsR]
+    | widen32to64 =>
+      -- print = "(" ++ print(e) ++ " as i64)"
+      simp only [microRustExprToString_unaryOp_widen, String.toList_append,
+        List.append_assoc, strR_lp, strR_as_i64_rp, List.cons_append, List.nil_append]
+      simp only [pRustExprF_paren]
+      -- First char of print(e) is non-ws and not '!' or '-'
+      have h_ne_e := rustPrint_ne_nil e h_e
+      match h_head_e : (microRustExprToString e).toList with
+      | [] => exact absurd h_head_e h_ne_e
+      | c_e :: cs_e =>
+        have h_nonws_e := rustPrint_first_nonws e h_e c_e cs_e h_head_e
+        have ⟨h_not_neg_e, h_not_bang_e⟩ := rustPrint_first_not_neg_bang e h_e c_e cs_e h_head_e
+        simp only [List.cons_append]
+        rw [skipWsR_nonws c_e _ h_nonws_e]
+        rw [pRustParenF_fallthrough k c_e _ h_not_bang_e h_not_neg_e]
+        -- Apply IH for e with ExprSafeR for " as i64)" ++ rest
+        have h_safe : ExprSafeR (' ' :: 'a' :: 's' :: ' ' :: 'i' :: '6' :: '4' :: ')' :: rest) :=
+          ⟨Or.inr ⟨' ', _, rfl, by native_decide⟩,
+           Or.inr ⟨' ', _, rfl, by native_decide, by native_decide, by decide⟩,
+           by intro cs h; simp [skipWsR] at h,
+           by intro cs h; simp [skipWsR] at h⟩
+        simp only [← List.cons_append, ← h_head_e]
+        rw [ih_e hs k hfuel_e _ h_safe]
+        simp only []
+        -- skipWsR (' ' :: 'a' :: ...) skips the space, then 'a' is non-ws
+        simp [skipWsR]
+    | trunc64to32 =>
+      -- print = "(" ++ print(e) ++ " as i32)"
+      simp only [microRustExprToString_unaryOp_trunc, String.toList_append,
+        List.append_assoc, strR_lp, strR_as_i32_rp, List.cons_append, List.nil_append]
+      simp only [pRustExprF_paren]
+      have h_ne_e := rustPrint_ne_nil e h_e
+      match h_head_e : (microRustExprToString e).toList with
+      | [] => exact absurd h_head_e h_ne_e
+      | c_e :: cs_e =>
+        have h_nonws_e := rustPrint_first_nonws e h_e c_e cs_e h_head_e
+        have ⟨h_not_neg_e, h_not_bang_e⟩ := rustPrint_first_not_neg_bang e h_e c_e cs_e h_head_e
+        simp only [List.cons_append]
+        rw [skipWsR_nonws c_e _ h_nonws_e]
+        rw [pRustParenF_fallthrough k c_e _ h_not_bang_e h_not_neg_e]
+        have h_safe : ExprSafeR (' ' :: 'a' :: 's' :: ' ' :: 'i' :: '3' :: '2' :: ')' :: rest) :=
+          ⟨Or.inr ⟨' ', _, rfl, by native_decide⟩,
+           Or.inr ⟨' ', _, rfl, by native_decide, by native_decide, by decide⟩,
+           by intro cs h; simp [skipWsR] at h,
+           by intro cs h; simp [skipWsR] at h⟩
+        simp only [← List.cons_append, ← h_head_e]
+        rw [ih_e hs k hfuel_e _ h_safe]
+        simp only []
+        simp [skipWsR]
+  | powCall base n h_base ih_base =>
+    -- Setup fuel
+    have h1 : fuel ≥ 1 := Nat.le_trans (rustExprDepth_pos (.powCall base n)) hfuel
+    have hfne : fuel ≠ 0 := by omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hfne
+    have hfuel_b : k ≥ rustExprDepth base := by simp only [rustExprDepth] at hfuel; omega
+    -- print = "power(" ++ print(base) ++ ", " ++ natToChars(n) ++ ")"
+    simp only [microRustExprToString_powCall, String.toList_append, List.append_assoc,
+      strR_power_lp, strR_rp, strR_comma_sp, String.toList_ofList, List.cons_append, List.nil_append]
+    -- pRustExprF at fuel+1: dispatch to pRustPowF
+    simp only [pRustExprF_power]
+    -- skipWsR of print(base) ++ ...
+    have h_ne_b := rustPrint_ne_nil base h_base
+    match h_head_b : (microRustExprToString base).toList with
+    | [] => exact absurd h_head_b h_ne_b
+    | c_b :: cs_b =>
+      have h_nonws_b := rustPrint_first_nonws base h_base c_b cs_b h_head_b
+      simp only [List.cons_append]
+      rw [skipWsR_nonws c_b _ h_nonws_b]
+      -- Apply IH for base with ExprSafeR (',' :: ...)
+      simp only [pRustExprF.pRustPowF]
+      have h_eq_b : pRustExprF k (c_b :: (cs_b ++ (',' :: ' ' :: (natToChars n ++ (')' :: rest))))) =
+          pRustExprF k ((microRustExprToString base).toList ++ (',' :: ' ' :: (natToChars n ++ (')' :: rest)))) :=
+        congrArg (pRustExprF k) (by simp [h_head_b])
+      have h_ih_b := ih_base hs k hfuel_b (',' :: ' ' :: (natToChars n ++ (')' :: rest)))
+        (exprSafeR_comma (' ' :: (natToChars n ++ (')' :: rest))))
+      rw [h_eq_b, h_ih_b]
+      simp only []
+      -- skipWsR (',' :: ...) = ',' :: ...
+      simp [skipWsR]
+      -- pNatR on natToChars n
+      rw [skipWsR_natToChars n (')' :: rest)]
+      rw [pNatR_natToChars n (')' :: rest) (Or.inr ⟨')', rest, rfl, by native_decide⟩)]
+      simp [skipWsR]
+  | arrayAccess base idx h_base h_idx hbase_var ih_base ih_idx =>
+    -- Extract vname; base must be a varRef
+    obtain ⟨vname, rfl⟩ := hbase_var
+    cases h_base with
+    | varRef _ hne hstart hcont hnot_kw =>
+    have hs_idx : NegLitDisamRust idx := hs.2
+    -- Fuel setup
+    have h1 : fuel ≥ 1 := Nat.le_trans (rustExprDepth_pos (.arrayAccess (.varRef vname) idx)) hfuel
+    have hfne : fuel ≠ 0 := by omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hfne
+    have hfuel_idx : k ≥ rustExprDepth idx := by simp only [rustExprDepth] at hfuel; omega
+    -- Unfold printer: vname ++ "[" ++ print(idx) ++ " as usize]" ++ rest
+    simp only [microRustExprToString_arrayAccess, microRustExprToString_varRef,
+      String.toList_append, List.append_assoc,
+      strR_lb, strR_as_usize_rb,
+      String.toList_ofList, List.cons_append, List.nil_append]
+    -- Destructure vname.toList
+    have hne' := toList_ne_nil_of_ne_empty_r vname hne
+    match hcs : vname.toList with
+    | [] => exact absurd hcs hne'
+    | c :: cs =>
+      have hhead := list_head_eq_of_cons_r hcs
+      have hstart' := hstart; simp only [hhead] at hstart'
+      have hcnd : c.isDigit = false := by
+        cases hstart' with
+        | inl h => exact isAlpha_not_digit c h
+        | inr h => subst h; native_decide
+      -- power( match impossible
+      have hnp : ∀ tail, c :: (cs ++ ('[' :: ((microRustExprToString idx).toList ++
+          (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest)))) ≠
+          'p' :: 'o' :: 'w' :: 'e' :: 'r' :: '(' :: tail := by
+        intro tail heq
+        have hident : ∀ ch ∈ cs, ch.isAlpha = true ∨ ch.isDigit = true ∨ ch = '_' := by
+          intro ch hmem; exact hcont ch (by rw [hcs]; exact List.mem_cons_of_mem c hmem)
+        have hce : c = 'p' := (List.cons.inj heq).1; subst hce
+        have htl : cs ++ ('[' :: ((microRustExprToString idx).toList ++
+            (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest))) =
+            'o' :: 'w' :: 'e' :: 'r' :: '(' :: tail := (List.cons.inj heq).2
+        -- '[' is not a valid ident char and not '('
+        -- Prove by case analysis on |cs|
+        -- rest_full starts with '[' which is not alpha/digit/underscore or '('
+        -- Short cs: 'ower(' spills into rest_full starting with '[', but '[' ≠ expected letter
+        -- Long cs: '(' appears among ident chars, contradiction
+        -- Use omega/simp to close each case. simp at htl closes most short cases directly.
+        match cs, htl with
+        | [], htl => simp at htl
+        | [_], htl => simp at htl
+        | [_, _], htl => simp at htl
+        | [_, _, _], htl => simp at htl
+        | [_, _, _, _], htl => simp at htl
+        | a :: b :: c' :: d :: e5 :: cs5, htl =>
+          simp at htl
+          have h5 : e5 = '(' := htl.2.2.2.2.1; subst h5
+          have hmem : '(' ∈ a :: b :: c' :: d :: '(' :: cs5 := by simp
+          exact absurd (hident '(' hmem) (by
+            intro h; rcases h with h | h | h
+            · exact absurd h (by native_decide)
+            · exact absurd h (by native_decide)
+            · exact absurd h (by decide))
+      show pRustExprF (k + 1) (c :: (cs ++ ('[' :: ((microRustExprToString idx).toList ++
+          (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest))))) =
+          some (MicroCExpr.arrayAccess (MicroCExpr.varRef vname) idx, rest)
+      rw [pRustExprF_ident k c _ hcnd (by cases hstart' with
+        | inl h => exact Or.inl h
+        | inr h => exact Or.inr h) hnp]
+      simp only [pRustExprF.pRustIdentF]
+      -- pIdentR parses vname, leaving '[' :: print(idx) ++ " as usize]" :: rest
+      have h_nli : NoLeadingIdentR ('[' :: ((microRustExprToString idx).toList ++
+          (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest))) :=
+        Or.inr ⟨'[', _, rfl, by native_decide, by native_decide, by decide⟩
+      have hpid : pIdentR (c :: (cs ++ ('[' :: ((microRustExprToString idx).toList ++
+          (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest))))) =
+          some (vname, '[' :: ((microRustExprToString idx).toList ++
+          (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest))) := by
+        have harg : c :: (cs ++ ('[' :: ((microRustExprToString idx).toList ++
+            (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest)))) =
+            vname.toList ++ ('[' :: ((microRustExprToString idx).toList ++
+            (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest))) := by
+          rw [hcs]; rfl
+        rw [harg]; exact pIdentR_exact vname _ hne hstart hcont h_nli
+      simp only [hpid]
+      simp [hnot_kw.1, hnot_kw.2]
+      -- skipWsR ('[' :: ...) = '[' :: ... (non-ws)
+      -- The ident match already led us to pRustIdentF which has the '[' branch
+      -- Now inside '[' branch: parse idx expression
+      have h_ne_idx := rustPrint_ne_nil idx h_idx
+      match h_head_idx : (microRustExprToString idx).toList with
+      | [] => exact absurd h_head_idx h_ne_idx
+      | c_i :: cs_i =>
+        have h_nonws_idx := rustPrint_first_nonws idx h_idx c_i cs_i h_head_idx
+        simp only [List.cons_append]
+        rw [skipWsR_nonws c_i _ h_nonws_idx]
+        -- Apply IH for idx with rest = " as usize]" ++ rest
+        -- Need ExprSafeR for " as usize]" ++ rest
+        have h_safe_as : ExprSafeR
+            (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest) :=
+          ⟨Or.inr ⟨' ', _, rfl, by native_decide⟩,
+           Or.inr ⟨' ', _, rfl, by native_decide, by native_decide, by decide⟩,
+           by intro cs h; simp [skipWsR] at h,
+           by intro cs h; simp [skipWsR] at h⟩
+        have h_eq_idx : pRustExprF k (c_i :: (cs_i ++
+            (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest))) =
+            pRustExprF k ((microRustExprToString idx).toList ++
+            (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest)) :=
+          congrArg (pRustExprF k) (by simp [h_head_idx])
+        have h_ih_idx := ih_idx hs_idx k hfuel_idx
+          (' ' :: 'a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest)
+          h_safe_as
+        rw [h_eq_idx, h_ih_idx]
+        simp only []
+        -- skipWsR (' ' :: 'a' :: 's' :: ...) = 'a' :: 's' :: ...
+        -- Then matchLiteral "as usize]" matches
+        simp [skipWsR]
+        -- matchLiteral on "as usize]" prefix
+        have hml : matchLiteral ['a', 's', ' ', 'u', 's', 'i', 'z', 'e', ']']
+            ('a' :: 's' :: ' ' :: 'u' :: 's' :: 'i' :: 'z' :: 'e' :: ']' :: rest) =
+            some rest := by
+          have := matchLiteral_exact ['a', 's', ' ', 'u', 's', 'i', 'z', 'e', ']'] rest
+          convert this using 2
+        rw [hml]
 
 /-! ## Top-Level Expression Roundtrip Theorem -/
 
