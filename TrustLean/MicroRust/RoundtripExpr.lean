@@ -768,13 +768,13 @@ private theorem power_match_impossible_varref (name : String)
 
 /-! ## Helper: skipWsR on space prefix -/
 
-@[simp] private theorem skipWsR_space (rest : List Char) :
+@[simp] theorem skipWsR_space (rest : List Char) :
     skipWsR (' ' :: rest) = skipWsR rest := by
   simp [skipWsR]
 
 /-! ## matchLiteral roundtrip -/
 
-private theorem matchLiteral_exact (pat rest : List Char) :
+theorem matchLiteral_exact (pat rest : List Char) :
     matchLiteral pat (pat ++ rest) = some rest := by
   induction pat with
   | nil => simp [matchLiteral]
