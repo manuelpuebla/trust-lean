@@ -2,6 +2,22 @@
 
 ## Current Version: v4.0.0
 
+### v4.0 Corrección 1: Cerrar roundtrip sorry
+
+**Objetivo**: Cerrar 2 sorry en capstone roundtrip theorems de MicroRust.
+**Patron**: Adaptacion textual de MicroC/RoundtripExpr.lean + RoundtripStmt.lean.
+**Lecciones**: L-669 (ExprSafe), L-668 (arrayAccess base=varRef), L-675 (nonseq helper + nofun).
+
+| Nodo | Tipo | Deps | Target | LOC est. | Status |
+|------|------|------|--------|----------|--------|
+| C1.1 rustExpr_roundtrip_with_rest | CRIT | — | RoundtripExpr.lean:793 | ~690 | pending |
+| C1.2 parseMicroRust_roundtrip | CRIT | C1.1 | RoundtripStmt.lean:246 | ~250 | pending |
+
+| Bloque | Nodos | Tipo |
+|--------|-------|------|
+| B34 | C1.1 | SEQ (CRIT) |
+| B35 | C1.2 | SEQ (CRIT, depends on B34) |
+
 ### Scope
 
 MicroRust targets the same imperative subset as MicroC: scalars, arrays, loops, conditionals, function calls. Ownership, borrowing, lifetimes, traits, and generics are out of scope. The emitted Rust uses only owned values (`let mut x: i64`).
