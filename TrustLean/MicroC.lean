@@ -14,6 +14,12 @@ import TrustLean.MicroC.Bridge
 import TrustLean.MicroC.Simulation
 import TrustLean.MicroC.Roundtrip
 import TrustLean.MicroC.Integration
+-- v4.1.0 modules
+import TrustLean.MicroC.UInt128
+import TrustLean.MicroC.UInt128Eval
+import TrustLean.MicroC.UInt128Agreement
+import TrustLean.MicroC.UInt128FuelMono
+import TrustLean.MicroC.UInt128Simulation
 -- v3.0.0 modules
 import TrustLean.MicroC.Int64
 import TrustLean.MicroC.Int64Eval

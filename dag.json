@@ -365,8 +365,144 @@
   ],
   "meta": {
     "created": "2026-02-20T19:23:56Z",
-    "updated": "2026-03-27T20:35:50Z",
-    "total_nodes": 10,
+    "updated": "2026-03-30T12:00:00Z",
+    "total_nodes": 17,
     "completed_nodes": 0
-  }
+  },
+  "phases_v41": [
+    {
+      "id": "fase10",
+      "name": "UInt128 Agreement — Goldilocks Formal Gap Closure",
+      "version": "v4.1.0",
+      "status": "pending",
+      "nodes": [
+        {
+          "id": "N27.1",
+          "name": "UInt128 Foundation (wrapUInt128, InUInt128Range, arith ops)",
+          "type": "FUND",
+          "status": "pending",
+          "files": ["TrustLean/MicroC/UInt128.lean"],
+          "deps": [],
+          "blocks": ["B36"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 3, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": [],
+            "lessons": ["L-620"],
+            "libraries": ["TrustLean:MicroC/Unsigned"],
+            "notes": "Pure abbreviations over wrapWidth 128. NO reprove existing properties. Read Unsigned.lean first."
+          }
+        },
+        {
+          "id": "N27.2",
+          "name": "UInt128 Evaluator (BinOp/UnaryOp/Expr/Stmt + simp lemmas)",
+          "type": "CRIT",
+          "status": "pending",
+          "files": ["TrustLean/MicroC/UInt128Eval.lean"],
+          "deps": ["N27.1"],
+          "blocks": ["B37"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 3, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": [],
+            "lessons": ["L-625", "L-620"],
+            "libraries": ["TrustLean:MicroC/UnsignedEval"],
+            "notes": "Mechanical copy of UnsignedEval.lean. CRITICAL: change % 64 to % 128 in bshl/bshr. Verify with grep."
+          }
+        },
+        {
+          "id": "N27.3",
+          "name": "UInt128 Agreement (12 per-op + general + non-vacuity)",
+          "type": "CRIT",
+          "status": "pending",
+          "files": ["TrustLean/MicroC/UInt128Agreement.lean"],
+          "deps": ["N27.2"],
+          "blocks": ["B38"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 4, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": [],
+            "lessons": ["L-630", "L-731"],
+            "libraries": ["TrustLean:MicroC/UnsignedAgreement", "TrustLean:MicroC/Int64Agreement"],
+            "notes": "Conditional/unconditional split per L-630. Proof: wrapWidth_of_inRange 128 _ h.1 h.2. bshl/bshr hypothesis uses % 128."
+          }
+        },
+        {
+          "id": "N27.4",
+          "name": "UInt128 Fuel Monotonicity (seq/while helpers + structural induction)",
+          "type": "CRIT",
+          "status": "pending",
+          "files": ["TrustLean/MicroC/UInt128FuelMono.lean"],
+          "deps": ["N27.2"],
+          "blocks": ["B38"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 2, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": [],
+            "lessons": ["L-625", "L-649"],
+            "libraries": ["TrustLean:MicroC/UnsignedFuelMono"],
+            "notes": "Line-by-line copy of UnsignedFuelMono.lean. TRAP: in while helper, use recursive IH not base evalMicroC_fuel_mono_full (L-649)."
+          }
+        },
+        {
+          "id": "N27.5",
+          "name": "UInt128 Simulation (re-export + smoke tests end-to-end)",
+          "type": "PAR",
+          "status": "pending",
+          "files": ["TrustLean/MicroC/UInt128Simulation.lean"],
+          "deps": ["N27.3", "N27.4"],
+          "blocks": ["B39"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 1, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": [],
+            "lessons": [],
+            "libraries": ["TrustLean:MicroC/UnsignedSimulation"],
+            "notes": "Light re-export file with end-to-end smoke tests. Include Goldilocks conditional subtract via uint128."
+          }
+        },
+        {
+          "id": "N27.6",
+          "name": "Goldilocks UInt128 Bridge (fits-in-128 + full-fold program)",
+          "type": "HOJA",
+          "status": "pending",
+          "files": ["TrustLean/Plonky3/GoldilocksUInt128.lean"],
+          "deps": ["N27.5"],
+          "blocks": ["B39"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 4, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": ["verificacion/fiat-crypto-machine-word-arithmetic-erbsen-philipoom-et-al-sp-2019.md"],
+            "lessons": ["L-731"],
+            "libraries": ["TrustLean:Plonky3/GoldilocksReduce"],
+            "notes": "Key theorem: (P-1)^2 < 2^128 by nlinarith+native_decide. Full fold works because 64 % 128 = 64 (unlike uint64 where 64 % 64 = 0)."
+          }
+        },
+        {
+          "id": "N27.7",
+          "name": "Integration + Zero Sorry Audit",
+          "type": "HOJA",
+          "status": "pending",
+          "files": ["TrustLean/MicroC.lean"],
+          "deps": ["N27.5", "N27.6"],
+          "blocks": ["B40"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 2, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": [],
+            "lessons": [],
+            "libraries": [],
+            "notes": "Add 5 imports to MicroC.lean. lake build. Zero sorry audit."
+          }
+        }
+      ],
+      "blocks": [
+        {"id": "B36", "name": "UInt128 Foundation", "nodes": ["N27.1"], "type": "SEQ", "status": "pending", "closed_at": null},
+        {"id": "B37", "name": "UInt128 Evaluator", "nodes": ["N27.2"], "type": "SEQ", "status": "pending", "closed_at": null},
+        {"id": "B38", "name": "Agreement + FuelMono", "nodes": ["N27.3", "N27.4"], "type": "AGENT_TEAM", "status": "pending", "closed_at": null},
+        {"id": "B39", "name": "Simulation + Goldilocks Bridge", "nodes": ["N27.5", "N27.6"], "type": "AGENT_TEAM", "status": "pending", "closed_at": null},
+        {"id": "B40", "name": "Integration + Audit", "nodes": ["N27.7"], "type": "SEQ", "status": "pending", "closed_at": null}
+      ]
+    }
+  ]
 }
