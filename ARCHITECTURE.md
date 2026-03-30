@@ -1,6 +1,659 @@
 # Trust-Lean: Architecture
 
-## Current Version: v4.1.0
+## Current Version: v4.3.0
+
+### Fase 10: VecSpecialOp — Non-Lane-Wise SIMD (mulHigh, satDoublingMulHigh, horizAdd)
+
+**Objetivo**: Extender VecStmt con 3 operaciones SIMD no-lane-wise para Montgomery REDC vectorizado y NTT horizontal reduction. Zero cambios al core IR — todo en `TrustLean/Vec/`.
+
+**Motivación**: truth_research_zk necesita `vqdmulhq_s32` (NEON Montgomery) y `_mm256_hadd_epi32` (AVX2 horizontal add). VecMap cubre lane-wise ops; VecSpecialOp cubre el resto.
+
+### Design Decisions (v4.3.0)
+
+1. **Nuevo inductive `VecSpecialOp`** en `Vec/VecSpecialOp.lean`: 3 constructores (mulHigh, satDoublingMulHigh, horizAdd). Semántica pura sobre `List Int` — sin fuel, sin side effects.
+2. **Nuevo constructor `vecSpecialOp` en VecStmt** (en `Vec/Defs.lean`): `| vecSpecialOp (op : VecSpecialOp) (lanes : Nat) (dst src1 src2 : String)`. Pattern idéntico a vecLoad/vecStore — fuel-free, opera sobre `VarName.array` positions.
+3. **readVec / writeVec helpers** (en `Vec/Defs.lean`): `readVec env name lanes → List Value` lee lanes consecutivos de `VarName.array name 0..lanes-1`. `writeVec env name vals → LowLevelEnv` escribe vals a las mismas posiciones. Reutilizados por vecSpecialOp y potencialmente por vecLoad/vecStore en el futuro.
+4. **AVX2 mulHigh emulación**: `_mm256_mulhi_epi32` NO existe. Backend emite: `_mm256_srli_epi64(_mm256_mul_epi32(a, b), 32)` + `_mm256_blend_epi32` para reempacar odd/even lanes. Documentado como secuencia, no como intrinsic único.
+5. **satDoublingMulHigh saturación**: Modelo exacto de `vqdmulhq_s32` — `sat((a * b * 2) / 2^32)` con saturación a `[-2^31, 2^31-1]`. Overflow de `Int32.min * Int32.min` satura a `Int32.max`.
+6. **horizAdd reduce lanes**: Input N lanes → output N/2 lanes en `dst[0..N/2-1]`. Positions `dst[N/2..N-1]` no se modifican (implementation-defined).
+7. **Vec/LiftingTheorem.lean NO se modifica**: Lifting es para vecMap. VecSpecialOp tiene sus propios soundness theorems (definitional, no inductivos).
+
+### Archivos
+
+**Nuevo** (1 archivo):
+- `TrustLean/Vec/VecSpecialOp.lean` — VecSpecialOp inductive + evalVecSpecialOp + soundness theorems + non-vacuity
+
+**Modificados** (6 archivos en Vec/):
+- `Vec/Defs.lean` — agregar readVec/writeVec helpers + vecSpecialOp constructor a VecStmt
+- `Vec/Eval.lean` — agregar case vecSpecialOp en evalVecStmt
+- `Vec/FuelMono.lean` — agregar case vecSpecialOp (fuel-free, trivial)
+- `Vec/CBackend.lean` — agregar emisión NEON + AVX2 para 3 ops
+- `Vec/RustBackend.lean` — agregar emisión std::arch para 3 ops
+- `Vec/Tests.lean` — agregar smoke tests para 3 ops
+
+### DAG (v4.3.0)
+
+| Nodo | Tipo | Deps | Target | LOC est. | Status |
+|------|------|------|--------|----------|--------|
+| N29.1 VecSpecialOp inductive + evalVecSpecialOp + soundness | FUND | — | Vec/VecSpecialOp.lean | ~150 | pending |
+| N29.2 readVec/writeVec helpers + vecSpecialOp en VecStmt + evalVecStmt case | CRIT | N29.1 | Vec/Defs.lean, Vec/Eval.lean | ~60 | pending |
+| N29.3 FuelMono case (fuel-free) | PAR | N29.2 | Vec/FuelMono.lean | ~15 | pending |
+| N29.4 C Backend emission (NEON + AVX2 emulation) | PAR | N29.1 | Vec/CBackend.lean | ~80 | pending |
+| N29.5 Rust Backend emission (std::arch) | PAR | N29.1 | Vec/RustBackend.lean | ~50 | pending |
+| N29.6 Tests + Integration (native_decide + end-to-end) | HOJA | N29.2, N29.3, N29.4, N29.5 | Vec/Tests.lean | ~60 | pending |
+
+### Formal Properties (v4.3.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N29.1 | mulHigh_sound: result[i] = (a[i] * b[i]) / 2^shift for all lanes | SOUNDNESS | P0 |
+| N29.1 | satDoublingMulHigh_sound: result[i] = sat((a[i]*b[i]*2)/2^32) | SOUNDNESS | P0 |
+| N29.1 | horizAdd_sound: result[i] = a[2i] + a[2i+1] for i < lanes/2 | SOUNDNESS | P0 |
+| N29.1 | Non-vacuity: concrete evaluations with native_decide | SOUNDNESS | P0 |
+| N29.2 | evalVecStmt vecSpecialOp = readVec → evalVecSpecialOp → writeVec | EQUIVALENCE | P0 |
+| N29.3 | vecSpecialOp is fuel-free (fuel mono trivial) | SOUNDNESS | P0 |
+| N29.4 | NEON: satDoublingMulHigh emits "vqdmulhq_s32" | INVARIANT | P0 |
+| N29.4 | AVX2: mulHigh emits emulation sequence (NOT _mm256_mulhi_epi32) | INVARIANT | P0 |
+| N29.6 | End-to-end: Montgomery REDC pattern via vecSpecialOp | SOUNDNESS | P0 |
+
+### Bloques
+
+- [x] **B47: VecSpecialOp definition + soundness** (SEQ, FUND): N29.1 — closed 2026-03-30
+- [x] **B48: VecStmt integration (Defs + Eval + FuelMono)** (SEQ, CRIT): N29.2, N29.3 — closed 2026-03-30
+- [x] **B49: Backends + Tests** (AGENT_TEAM): N29.4, N29.5, N29.6 — closed 2026-03-30
+
+### Instrucciones Detalladas por Bloque
+
+#### B47: VecSpecialOp Definition + Soundness (N29.1)
+
+**Pre-Block Briefing:**
+- **B4**: `scout.py TrustLean/Vec/Defs.lean TrustLean/Vec/Eval.lean` → Read completos (ya en contexto)
+
+**Archivo a crear**: `TrustLean/Vec/VecSpecialOp.lean`
+
+**Importar**: `TrustLean.Core.Value` (para Int, Value)
+
+**Tareas**:
+1. Definir `VecSpecialOp`:
+   ```lean
+   inductive VecSpecialOp where
+     | mulHigh (shift : Nat := 32)
+     | satDoublingMulHigh
+     | horizAdd
+     deriving Repr, BEq, DecidableEq, Inhabited
+   ```
+
+2. Definir `evalVecSpecialOp : VecSpecialOp → List Int → List Int → Nat → Option (List Int)`:
+   - `mulHigh shift`: `result[i] = (a[i] * b[i]) / (2 ^ shift)` para i < lanes. Requiere `a.length ≥ lanes ∧ b.length ≥ lanes`.
+   - `satDoublingMulHigh`: `result[i] = Int.min (Int.max ((a[i] * b[i] * 2) / (2^32)) (-(2^31))) (2^31 - 1)` (saturación bilateral). Requiere `a.length ≥ lanes ∧ b.length ≥ lanes`.
+   - `horizAdd`: `result[i] = a[2*i] + a[2*i+1]` para i < lanes/2. Requiere `a.length ≥ lanes`. Produce lista de longitud `lanes/2`.
+
+3. **Soundness theorems** (3, definitional unfolding):
+   ```lean
+   theorem mulHigh_sound (shift : Nat) (a b : List Int) (lanes : Nat)
+       (ha : a.length ≥ lanes) (hb : b.length ≥ lanes)
+       (result : List Int)
+       (h : evalVecSpecialOp (.mulHigh shift) a b lanes = some result) :
+       ∀ i, i < lanes → result.get! i = (a.get! i * b.get! i) / (2 ^ shift)
+
+   theorem satDoublingMulHigh_sound (a b : List Int) (lanes : Nat)
+       (ha : a.length ≥ lanes) (hb : b.length ≥ lanes)
+       (result : List Int)
+       (h : evalVecSpecialOp .satDoublingMulHigh a b lanes = some result) :
+       ∀ i, i < lanes → result.get! i =
+         Int.min (Int.max ((a.get! i * b.get! i * 2) / (2^32)) (-(2^31))) (2^31 - 1)
+
+   theorem horizAdd_sound (a : List Int) (lanes : Nat)
+       (ha : a.length ≥ lanes) (result : List Int)
+       (h : evalVecSpecialOp .horizAdd a [] lanes = some result) :
+       ∀ i, i < lanes / 2 → result.get! i = a.get! (2*i) + a.get! (2*i+1)
+   ```
+   Proof strategy: unfold `evalVecSpecialOp`, simplify. Las pruebas son definitional — `evalVecSpecialOp` es una función pura sobre listas.
+
+4. **Non-vacuity** (3 concrete tests via `native_decide`):
+   - `mulHigh 32 [3,5] [7,11] 2 = some [0, 0]` (small numbers → division truncates to 0)
+   - `horizAdd [10,20,30,40] [] 4 = some [30, 70]`
+   - `satDoublingMulHigh [1073741824] [2] 1 = some [1]` (1073741824 * 2 * 2 / 2^32 = 1)
+
+**VERIFICAR**: `lake build TrustLean.Vec.VecSpecialOp` compila sin sorry.
+
+**LOC estimado**: ~150. **Riesgo**: Bajo. **Tiempo**: 2-3 hrs.
+
+**TRAP**: `List.get!` necesita `[Inhabited α]`. Int es Inhabited. Asegurar que `evalVecSpecialOp` retorna `List Int`, no `Array Int` (las pruebas con `native_decide` sobre `List` son más simples que sobre `Array`).
+
+---
+
+#### B48: VecStmt Integration (N29.2 + N29.3)
+
+**Pre-Block Briefing:**
+- **B4**: Re-read `Vec/Defs.lean` (VecStmt), `Vec/Eval.lean` (evalVecStmt), `Vec/FuelMono.lean` (fuel mono)
+
+**Archivos a modificar**: `Vec/Defs.lean`, `Vec/Eval.lean`, `Vec/FuelMono.lean`
+
+**Tareas en Vec/Defs.lean**:
+1. Agregar import de `TrustLean.Vec.VecSpecialOp`
+2. Definir `readVec`:
+   ```lean
+   def readVec (env : LowLevelEnv) (name : String) (lanes : Nat) : List Int :=
+     (List.range lanes).map fun i =>
+       match env (.array name (Int.ofNat i)) with
+       | .int v => v
+       | _ => 0
+   ```
+3. Definir `writeVec`:
+   ```lean
+   def writeVec (env : LowLevelEnv) (name : String) (vals : List Int) : LowLevelEnv :=
+     vals.foldlIdx (fun i e v => e.update (.array name (Int.ofNat i)) (.int v)) env
+   ```
+   **NOTA**: `List.foldlIdx` puede no existir. Alternativa: `(vals.enum).foldl (fun e (i, v) => e.update (.array name (Int.ofNat i)) (.int v)) env`. O usar `(List.range vals.length).foldl` con `vals.get!`.
+4. Agregar constructor a VecStmt:
+   ```lean
+   | vecSpecialOp (op : VecSpecialOp) (lanes : Nat) (dst src1 src2 : String) : VecStmt
+   ```
+   **POSICIÓN**: Después de vecStore, antes de vecSeq. El `deriving Repr, Inhabited` debe seguir funcionando.
+
+**Tareas en Vec/Eval.lean**:
+1. Agregar import de `TrustLean.Vec.VecSpecialOp`
+2. Agregar case en `evalVecStmt`:
+   ```lean
+   | .vecSpecialOp op lanes dst src1 src2 =>
+     let a := readVec env src1 lanes
+     let b := readVec env src2 lanes
+     match evalVecSpecialOp op a b lanes with
+     | some result => some (.normal, writeVec env dst result)
+     | none => none
+   ```
+
+**Tareas en Vec/FuelMono.lean**:
+1. Agregar case en `evalVecStmt_fuel_mono_full`:
+   ```lean
+   | vecSpecialOp _ _ _ _ _ =>
+     simp only [evalVecStmt] at h ⊢; exact h
+   ```
+   Pattern idéntico a vecLoad/vecStore — fuel-free.
+
+**VERIFICAR**: `lake build TrustLean.Vec.FuelMono` compila sin sorry (imports through Eval → Defs).
+
+**LOC estimado**: ~60 (across 3 files). **Riesgo**: Bajo. **Tiempo**: 2-3 hrs.
+
+**TRAP**: Al agregar un constructor a VecStmt, `evalVecStmt` en Eval.lean y el match en FuelMono.lean deben cubrir el nuevo caso. Si la compilación falla con "missing cases", agregar el case.
+
+---
+
+#### B49: Backends + Tests (N29.4 + N29.5 + N29.6, paralelo)
+
+**Pre-Block Briefing:**
+- **B4**: Re-read `Vec/CBackend.lean`, `Vec/RustBackend.lean`, `Vec/Tests.lean`
+
+##### N29.4: C Backend (Vec/CBackend.lean)
+
+**Agregar**:
+1. Import `TrustLean.Vec.VecSpecialOp`
+2. Función `vecSpecialOpToC (config : VecConfig) (dst src1 src2 : String) : VecSpecialOp → String`:
+   - **NEON**:
+     - `mulHigh _` → `"{dst} = vmulhq_s32({src1}, {src2});"`
+     - `satDoublingMulHigh` → `"{dst} = vqdmulhq_s32({src1}, {src2});"`
+     - `horizAdd` → `"{dst} = vpaddlq_s32({src1});"`
+   - **AVX2**:
+     - `mulHigh _` → Emulación:
+       ```c
+       __m256i __lo = _mm256_mul_epu32({src1}, {src2});
+       __m256i __hi = _mm256_mul_epu32(_mm256_srli_epi64({src1}, 32), _mm256_srli_epi64({src2}, 32));
+       {dst} = _mm256_blend_epi32(_mm256_srli_epi64(__lo, 32), __hi, 0xAA);
+       ```
+     - `satDoublingMulHigh` → emulación similar con shift extra
+     - `horizAdd` → `"{dst} = _mm256_hadd_epi32({src1}, {src2});"`
+   - **Scalar fallback**: for loop con operaciones escalares equivalentes
+3. Agregar case en `vecStmtToC` para `vecSpecialOp`:
+   ```lean
+   | .vecSpecialOp op lanes dst src1 src2 =>
+     vecSpecialOpToC config dst src1 src2 op
+   ```
+
+##### N29.5: Rust Backend (Vec/RustBackend.lean)
+
+**Pattern análogo** al C backend pero con `std::arch::aarch64::*` y `std::arch::x86_64::*`.
+
+##### N29.6: Tests (Vec/Tests.lean)
+
+**Agregar**:
+1. Import `TrustLean.Vec.VecSpecialOp`
+2. Smoke test: `mulHigh` con valores concretos
+3. Smoke test: `horizAdd` con valores concretos
+4. Smoke test: Montgomery REDC pattern (vecSpecialOp.satDoublingMulHigh + vecMap)
+5. Intrinsic table tests: `vecSpecialOpToC` emite strings correctos
+
+**LOC estimado**: ~190 (across 3 files). **Riesgo**: Bajo. **Tiempo**: 2-3 hrs.
+
+---
+
+## Previous Versions
+
+### v4.2.0
+
+### Fase 9: VecStmt — Verified SIMD Wrapper Layer
+
+**Objetivo**: Agregar capa wrapper `VecStmt` sobre el `Stmt` existente para SIMD verificado (NEON 4-lane, AVX2 8-lane). El lifting theorem garantiza que `vecMap n body` produce el mismo resultado que N evaluaciones escalares independientes. Zero modificaciones al core IR.
+
+**Motivación**: truth_research_zk Path B (SIMD, no verificado) es 4-8x más rápido que Path A (verificado, escalar). Con VecStmt, Path A puede emitir SIMD verificado, reutilizando las pruebas escalares existentes via el lifting theorem. Los NTT butterflies SIMD son lane-wise: cada lane computa exactamente la misma operación escalar.
+
+### Design Decisions (v4.2.0)
+
+1. **Wrapper, no extensión del core**: `VecStmt` vive en `TrustLean/Vec/` — directorio nuevo. Zero cambios a `Core/`, `MicroC/`, `MicroRust/`, `Backend/`. Los 879+ theorems existentes no se tocan. Única modificación: agregar `import TrustLean.Vec` al root `TrustLean.lean`.
+2. **Reutiliza `VarName.array`**: Los vectores SIMD son secuencias de `VarName.array "va" 0`, `.array "va" 1`, ..., `.array "va" (n-1)`. NO se extiende `Value` ni `VarName`. `LowLevelEnv := VarName → Value` ya soporta arrays (L-290, L-313).
+3. **`selectLane` / `writeLane`**: Remap transparente entre VarNames escalares (`user "x"`) y posiciones vectoriales (`array "x" i`). Lane i de vecMap opera sobre un "view" del environment donde `user "x"` lee de `array "x" i`.
+4. **`writesTo` como campo de `vecMap`**: Per QA review, el constructor `vecMap` incluye `h_writes : writesTo body ⊆ vars` como hypothesis embebida. Esto hace que la precondición del lifting theorem sea trivial en cada call site — no hay frame-condition proof manual.
+5. **`VecType` parametrizado**: `VecType := u32 | u64` para distinguir lane widths. v4.2.0 focaliza en `u32` (BabyBear, Mersenne31, KoalaBear NTTs). Extensible a `f32`, `i64` sin rediseño.
+6. **Alignment en vecLoad/vecStore**: Campo `alignment : Nat` (default = lane width). No afecta semántica (solo backend emission), pero habilita `__attribute__((aligned(32)))` en C y `#[repr(align(32))]` en Rust.
+7. **Backend por config, no por typeclass**: `vecStmtToC (config : VecConfig) : VecStmt → String`. El config selecciona NEON vs AVX2 vs scalar fallback. No se extiende `BackendEmitter` typeclass — VecStmt es una capa separada.
+8. **Out of scope (v4.3.0+)**: Reductions (`vecReduceAdd`), masking/blending, shuffles/permutes, Montgomery-specific intrinsics (`vqdmulhq`, `vhsubq`). Se agregan incrementalmente sin rediseño.
+
+### Archivos
+
+**Nuevos** (8 archivos, ~TrustLean/Vec/):
+- `TrustLean/Vec/Defs.lean` — VecStmt, VecConfig, VecType, selectLane, writeLane, writesTo
+- `TrustLean/Vec/Eval.lean` — evalVecStmt (delegates to evalStmt per lane)
+- `TrustLean/Vec/LiftingTheorem.lean` — vecMap_lane_correct (THE key theorem)
+- `TrustLean/Vec/FuelMono.lean` — evalVecStmt_fuel_mono_full
+- `TrustLean/Vec/CBackend.lean` — vecStmtToC: NEON + AVX2 + scalar fallback
+- `TrustLean/Vec/RustBackend.lean` — vecStmtToRust: std::arch intrinsics
+- `TrustLean/Vec/Tests.lean` — smoke tests + non-vacuity (butterfly via vecMap)
+- `TrustLean/Vec.lean` — root import for Vec modules
+
+**Modificados** (imports únicamente):
+- `TrustLean.lean` — agregar `import TrustLean.Vec`
+
+### DAG (v4.2.0)
+
+| Nodo | Tipo | Deps | Target | LOC est. | Status |
+|------|------|------|--------|----------|--------|
+| N28.1 VecStmt IR (VecStmt, VecConfig, VecType, selectLane, writeLane, writesTo) | FUND | — | Vec/Defs.lean | ~250 | pending |
+| N28.2 evalVecStmt (Nat.foldl per lane, delegates to evalStmt) | CRIT | N28.1 | Vec/Eval.lean | ~200 | pending |
+| N28.3 Lifting theorem (vecMap_lane_correct — lane independence via VarName.array disjointness) | CRIT | N28.2 | Vec/LiftingTheorem.lean | ~300 | pending |
+| N28.4 Fuel monotonicity (evalVecStmt_fuel_mono_full) | CRIT | N28.2 | Vec/FuelMono.lean | ~150 | pending |
+| N28.5 C Backend (vecStmtToC: NEON vaddq/vmulq + AVX2 _mm256_add/mullo + scalar loop) | PAR | N28.2 | Vec/CBackend.lean | ~300 | pending |
+| N28.6 Rust Backend (vecStmtToRust: std::arch::aarch64 + std::arch::x86_64) | PAR | N28.2 | Vec/RustBackend.lean | ~250 | pending |
+| N28.7 Smoke tests + Non-vacuity (butterfly vecMap = 4× scalar butterfly) | HOJA | N28.3, N28.4, N28.5 | Vec/Tests.lean | ~200 | pending |
+| N28.8 Integration + Zero Sorry Audit | HOJA | N28.7 | Vec.lean + TrustLean.lean | ~20 | pending |
+
+### Formal Properties (v4.2.0)
+
+| Nodo | Propiedad | Tipo | Prioridad |
+|------|-----------|------|-----------|
+| N28.1 | selectLane i then writeLane i is identity on unmodified vars | PRESERVATION | P0 |
+| N28.1 | writeLane i doesn't affect lane j (i ≠ j) via VarName.array disjointness | INVARIANT | P0 |
+| N28.1 | writesTo is sound: stmt only modifies VarNames in writesTo result | SOUNDNESS | P0 |
+| N28.1 | Non-vacuity: selectLane/writeLane roundtrip example | SOUNDNESS | P0 |
+| N28.2 | evalVecStmt (scalar s) = evalStmt s (transparent delegation) | EQUIVALENCE | P0 |
+| N28.2 | evalVecStmt terminates when evalStmt terminates for each lane | INVARIANT | P0 |
+| N28.3 | **vecMap_lane_correct**: lane i of vecMap = evalStmt on selectLane i data | SOUNDNESS | P0 |
+| N28.3 | Lane independence: vecMap lane i result independent of lane j (i ≠ j) | INVARIANT | P0 |
+| N28.3 | Non-vacuity: butterfly body via vecMap 4 = 4× scalar butterfly | SOUNDNESS | P0 |
+| N28.4 | evalVecStmt_fuel_mono_full: more fuel preserves non-OOF results | SOUNDNESS | P0 |
+| N28.5 | vecStmtToC with scalar config produces valid C loop | INVARIANT | P0 |
+| N28.5 | vecStmtToC with neon config produces valid ARM intrinsics | INVARIANT | P0 |
+| N28.5 | vecStmtToC with avx2 config produces valid Intel intrinsics | INVARIANT | P0 |
+| N28.6 | vecStmtToRust produces compilable Rust with std::arch | INVARIANT | P0 |
+| N28.7 | End-to-end: butterfly Stmt via vecMap → vecStmtToC → compilable C | SOUNDNESS | P0 |
+| N28.8 | Zero sorry across entire project | SOUNDNESS | P0 |
+
+> **Nota**: Propiedades en lenguaje natural (intención de diseño).
+
+### Bloques
+
+- [x] **B41: VecStmt IR + Helpers** (SEQ, FUND): N28.1 — closed 2026-03-30
+- [x] **B42: evalVecStmt** (SEQ, CRIT): N28.2 — closed 2026-03-30
+- [x] **B43: Lifting Theorem** (SEQ, CRIT — de-risk): N28.3 — closed 2026-03-30
+- [x] **B44: Fuel Monotonicity** (SEQ, CRIT): N28.4 — closed 2026-03-30
+- [x] **B45: C + Rust Backends** (AGENT_TEAM): N28.5, N28.6 — closed 2026-03-30
+- [x] **B46: Tests + Integration** (AGENT_TEAM): N28.7, N28.8 — closed 2026-03-30
+
+### Instrucciones Detalladas por Bloque
+
+#### B41: VecStmt IR + Helpers (N28.1)
+
+**Pre-Block Briefing obligatorio:**
+- **B1**: Leer este plan en ARCHITECTURE.md
+- **B3**: `query_lessons.py --lesson L-313` (VarName disjointness), `--lesson L-290` (functional env)
+- **B4**: `scout.py TrustLean/Core/Value.lean TrustLean/Core/Stmt.lean` → Read VarName (lines 199-229), Stmt (lines 36-60)
+
+**Archivo a crear**: `TrustLean/Vec/Defs.lean`
+
+**Referencias obligatorias**: `Core/Value.lean` (VarName, LowLevelEnv), `Core/Stmt.lean` (Stmt)
+
+**Tareas**:
+1. Importar `TrustLean.Core.Stmt` (trae Value, VarName, LowLevelEnv, etc.)
+2. Definir `VecType`:
+   ```lean
+   inductive VecType where | u32 | u64
+     deriving Repr, BEq, DecidableEq
+   ```
+3. Definir `VecConfig`:
+   ```lean
+   structure VecConfig where
+     lanes : Nat
+     target : String  -- "neon" | "avx2" | "scalar"
+     vecType : VecType
+     alignment : Nat := 0  -- 0 = natural alignment
+   ```
+4. Definir `writesTo : Stmt → Finset VarName` — análisis estático de qué VarNames modifica un Stmt:
+   - `assign v _ → {v}`
+   - `seq s1 s2 → writesTo s1 ∪ writesTo s2`
+   - `ite _ s1 s2 → writesTo s1 ∪ writesTo s2`
+   - `while _ body → writesTo body`
+   - `for_ init _ step body → writesTo init ∪ writesTo step ∪ writesTo body`
+   - `store/load → {target var}` — load modifica su var destino
+   - `skip/break_/continue_/return_/call → ∅` (call es conservador pero OK)
+
+   **NOTA**: Puede requerir `import Mathlib.Data.Finset.Basic` para `Finset`. Si hay problemas de dependencias, usar `List VarName` con `⊆` en vez de `Finset`.
+
+5. Definir `selectLane`:
+   ```lean
+   def selectLane (i : Int) (vars : List String) (env : LowLevelEnv) : LowLevelEnv :=
+     fun v => match v with
+       | .user name => if name ∈ vars then env (.array name i) else env v
+       | _ => env v
+   ```
+6. Definir `writeLane`:
+   ```lean
+   def writeLane (i : Int) (vars : List String) (laneEnv : LowLevelEnv) (env : LowLevelEnv) : LowLevelEnv :=
+     fun v => match v with
+       | .array name idx => if name ∈ vars ∧ idx = i then laneEnv (.user name) else env v
+       | _ => env v
+   ```
+7. Definir `VecStmt`:
+   ```lean
+   inductive VecStmt where
+     | scalar : Stmt → VecStmt
+     | vecMap (lanes : Nat) (vars : List String) (body : Stmt) : VecStmt
+     | vecLoad (dst : String) (base : String) (startIdx : LowLevelExpr) (lanes : Nat) : VecStmt
+     | vecStore (base : String) (startIdx : LowLevelExpr) (src : String) (lanes : Nat) : VecStmt
+     | vecSeq : VecStmt → VecStmt → VecStmt
+   ```
+   **NOTA**: `writesTo body ⊆ vars` se requiere como hipótesis en el lifting theorem (N28.3), NO como campo del constructor. Esto simplifica la definición y permite construir VecStmt sin proof obligations en el constructor.
+
+8. **Propiedades de selectLane/writeLane** (5-8 lemmas):
+   - `selectLane_user_in_vars`: para v ∈ vars, `selectLane i vars env (.user v) = env (.array v i)`
+   - `selectLane_user_not_in_vars`: para v ∉ vars, `selectLane i vars env (.user v) = env (.user v)`
+   - `writeLane_array_match`: `writeLane i vars laneEnv env (.array name i) = laneEnv (.user name)` si name ∈ vars
+   - `writeLane_array_other_lane`: para j ≠ i, `writeLane i vars laneEnv env (.array name j) = env (.array name j)`
+   - `writeLane_user`: `writeLane i vars laneEnv env (.user name) = env (.user name)`
+
+9. **Non-vacuity**: `selectLane` y `writeLane` roundtrip con valores concretos.
+
+**VERIFICAR**: `lake env lean TrustLean/Vec/Defs.lean` compila sin errores ni sorry.
+
+**LOC estimado**: ~250. **Riesgo**: Medio (Finset import puede complicar; fallback a List). **Tiempo**: 4-6 hrs.
+
+---
+
+#### B42: evalVecStmt (N28.2)
+
+**Pre-Block Briefing obligatorio:**
+- **B1**: Leer este plan
+- **B3**: `query_lessons.py --lesson L-657` (lifting lemma pattern)
+- **B4**: `scout.py TrustLean/Core/Eval.lean` → Read evalStmt completo (lines 101-158)
+
+**Archivo a crear**: `TrustLean/Vec/Eval.lean`
+
+**Referencias obligatorias**: `Core/Eval.lean` (evalStmt pattern), `Vec/Defs.lean`
+
+**Tareas**:
+1. Importar `TrustLean.Vec.Defs` y `TrustLean.Core.Eval`
+2. Definir `evalVecStmt`:
+   ```lean
+   def evalVecStmt (fuel : Nat) (env : LowLevelEnv) : VecStmt → Option (Outcome × LowLevelEnv)
+     | .scalar s => evalStmt fuel env s
+     | .vecMap lanes vars body =>
+       -- Fold over lanes: execute body once per lane
+       let result := (List.range lanes).foldl (fun acc i =>
+         match acc with
+         | none => none
+         | some (oc, env') =>
+           if oc != .normal then some (oc, env')  -- propagate non-normal
+           else
+             let laneEnv := selectLane i vars env'
+             match evalStmt fuel laneEnv body with
+             | some (.normal, laneEnv') => some (.normal, writeLane i vars laneEnv' env')
+             | other => other  -- propagate error
+       ) (some (.normal, env))
+       result
+     | .vecLoad dst base startIdx lanes =>
+       match evalExpr env startIdx with
+       | some (.int start) =>
+         let env' := (List.range lanes).foldl (fun e i =>
+           e.update (.array dst i) (env (.array base (start + i)))
+         ) env
+         some (.normal, env')
+       | _ => none
+     | .vecStore base startIdx src lanes =>
+       match evalExpr env startIdx with
+       | some (.int start) =>
+         let env' := (List.range lanes).foldl (fun e i =>
+           e.update (.array base (start + i)) (env (.array src i))
+         ) env
+         some (.normal, env')
+       | _ => none
+     | .vecSeq s1 s2 =>
+       match evalVecStmt fuel env s1 with
+       | some (.normal, env') => evalVecStmt fuel env' s2
+       | other => other
+   ```
+3. **@[simp] equation lemmas** para cada constructor.
+4. **Propiedad clave**: `evalVecStmt fuel env (scalar s) = evalStmt fuel env s` (transparencia).
+5. **Non-vacuity**: evaluación concreta de vecLoad + vecMap + vecStore con 2 lanes.
+
+**VERIFICAR**: `lake env lean TrustLean/Vec/Eval.lean` compila sin errores ni sorry.
+
+**LOC estimado**: ~200. **Riesgo**: Medio (foldl sobre lanes + match puede complicar proofs). **Tiempo**: 3-4 hrs.
+
+**TRAP**: El `List.range lanes` produce `[0, 1, ..., lanes-1]` como `Nat`, pero `VarName.array` usa `Int`. Usar `.foldl ... (Int.ofNat i)` o convertir explícitamente.
+
+---
+
+#### B43: Lifting Theorem (N28.3) — DE-RISK OBLIGATORIO
+
+**Pre-Block Briefing obligatorio:**
+- **B1**: Leer este plan
+- **B3**: `query_lessons.py --lesson L-657` (lifting pattern), `--lesson L-313` (VarName disjointness)
+- **B4**: `scout.py TrustLean/Vec/Eval.lean TrustLean/Vec/Defs.lean` → Read completos
+
+**Archivo a crear**: `TrustLean/Vec/LiftingTheorem.lean`
+
+**Este es el nodo más difícil de la fase. DE-RISK con sketch _aux antes de intentar la versión final.**
+
+**Referencia obligatoria**: `Core/Foundation.lean` (propiedades de evalStmt)
+
+**Tareas**:
+1. Importar `TrustLean.Vec.Eval`
+2. **Lemma de disjointness** (preparatorio):
+   ```lean
+   theorem array_disjoint_lanes (name : String) (i j : Int) (h : i ≠ j) :
+       VarName.array name i ≠ VarName.array name j := by
+     intro h_eq; exact h (VarName.array.inj h_eq).2
+   ```
+3. **Lemma: writeLane no afecta otros lanes** (preparatorio):
+   ```lean
+   theorem writeLane_preserves_other_lane (i j : Int) (hij : i ≠ j) (vars : List String)
+       (laneEnv env : LowLevelEnv) (name : String) :
+       writeLane i vars laneEnv env (.array name j) = env (.array name j)
+   ```
+4. **Lemma: writeLane no afecta user vars** (preparatorio):
+   ```lean
+   theorem writeLane_preserves_user (i : Int) (vars : List String) (laneEnv env : LowLevelEnv)
+       (name : String) :
+       writeLane i vars laneEnv env (.user name) = env (.user name)
+   ```
+5. **Lemma: body que solo escribe a vars no afecta otros lane reads**:
+   Si `writesTo body ⊆ userVars` (solo escribe a `user` VarNames), entonces evalStmt body no modifica `array` positions.
+   ```lean
+   theorem evalStmt_preserves_array (fuel : Nat) (env env' : LowLevelEnv) (body : Stmt)
+       (h_writes : ∀ v ∈ writesTo body, ∃ name, v = .user name)
+       (h_eval : evalStmt fuel env body = some (.normal, env'))
+       (name : String) (idx : Int) :
+       env' (.array name idx) = env (.array name idx)
+   ```
+   **NOTA**: Esta es la propiedad de frame más importante. Se prueba por inducción sobre Stmt. Para `assign v e`, si `v = .user name`, entonces `env.update (.user name) val` no cambia `env (.array ...)` porque `VarName.user ≠ VarName.array` por constructor disjointness.
+
+6. **EL LIFTING THEOREM**:
+   ```lean
+   theorem vecMap_lane_correct (lanes : Nat) (vars : List String) (body : Stmt)
+       (fuel : Nat) (env : LowLevelEnv) (i : Nat) (hi : i < lanes)
+       (h_writes : ∀ v ∈ writesTo body, ∃ name, v = .user name ∧ name ∈ vars)
+       (h_eval : ∀ j < lanes, ∃ env',
+         evalStmt fuel (selectLane j vars env) body = some (.normal, env')) :
+       let envResult := (evalVecStmt fuel env (.vecMap lanes vars body)).get!.2
+       let laneEnv' := (evalStmt fuel (selectLane i vars env) body).get!.2
+       ∀ v ∈ vars, envResult (.array v (Int.ofNat i)) = laneEnv' (.user v)
+   ```
+
+   **Estrategia de prueba**: Inducción sobre `lanes`.
+   - Base (lanes = 0): `i < 0` es falso.
+   - Paso inductivo: El foldl procesa lane 0, luego lane 1, etc. Para lane i, usamos:
+     a. `evalStmt_preserves_array`: lanes anteriores no contaminan los datos de lane i
+     b. `writeLane_preserves_other_lane`: writes de lanes anteriores no afectan lane i
+     c. La evaluación de lane i ve exactamente `selectLane i vars env` (datos originales)
+
+   **ALTERNATIVA si la inducción es muy compleja**: Probar primero para `lanes = 1` (trivial), luego `lanes = 2` (primer caso no trivial — una lane anterior), luego generalizar.
+
+7. **Non-vacuity**: Butterfly body concreto via vecMap 4 = 4 evaluaciones escalares independientes.
+
+**VERIFICAR**: `lake env lean TrustLean/Vec/LiftingTheorem.lean` compila sin errores ni sorry.
+
+**LOC estimado**: ~300. **Riesgo**: ALTO (proof de frame condition). **Tiempo**: 6-10 hrs.
+
+---
+
+#### B44: Fuel Monotonicity (N28.4)
+
+**Pre-Block Briefing obligatorio:**
+- **B3**: `query_lessons.py --lesson L-625` (fuel mono structure)
+- **B4**: `scout.py TrustLean/Core/FuelMono.lean` → Read (209 LOC)
+
+**Archivo a crear**: `TrustLean/Vec/FuelMono.lean`
+
+**Tareas**:
+1. Importar `TrustLean.Vec.Eval`
+2. Fuel mono para VecStmt — 5 constructors:
+   - `scalar`: delegates to `evalStmt_fuel_mono_full`
+   - `vecMap`: cada lane usa `evalStmt_fuel_mono_full` internamente
+   - `vecLoad`/`vecStore`: fuel-free (no recursion)
+   - `vecSeq`: standard seq pattern (IH1 + IH2)
+3. Public API:
+   ```lean
+   theorem evalVecStmt_fuel_mono_full {fuel fuel' : Nat} {env env' : LowLevelEnv}
+       {vs : VecStmt} {oc : Outcome}
+       (h : evalVecStmt fuel env vs = some (oc, env'))
+       (hle : fuel ≤ fuel') (hoc : oc ≠ .outOfFuel) :
+       evalVecStmt fuel' env vs = some (oc, env')
+   ```
+
+**LOC estimado**: ~150. **Riesgo**: Medio (vecMap foldl complicates proof). **Tiempo**: 3-4 hrs.
+
+---
+
+#### B45: C + Rust Backends (N28.5 + N28.6 en paralelo)
+
+**Pre-Block Briefing obligatorio:**
+- **B3**: `query_lessons.py --lesson L-308` (backend emitter architecture)
+- **B4**: `scout.py TrustLean/Backend/CBackend.lean` → Read stmtToC pattern
+
+##### Worker N28.5: C Backend
+
+**Archivo a crear**: `TrustLean/Vec/CBackend.lean`
+
+**Tareas**:
+1. Importar `TrustLean.Vec.Defs`, `TrustLean.Backend.CBackend` (para reusar `exprToC`, `varNameToC`)
+2. Definir intrinsic tables:
+   ```lean
+   def neonBinOpIntrinsic : BinOp → String
+     | .add => "vaddq_u32"
+     | .sub => "vsubq_u32"
+     | .mul => "vmulq_u32"
+     | .band => "vandq_u32"
+     | .bor  => "vorrq_u32"
+     | .bxor => "veorq_u32"
+     | .bshl => "vshlq_n_u32"
+     | .bshr => "vshrq_n_u32"
+     | _ => "/* unsupported */"
+
+   def avx2BinOpIntrinsic : BinOp → String
+     | .add => "_mm256_add_epi32"
+     | .sub => "_mm256_sub_epi32"
+     | .mul => "_mm256_mullo_epi32"
+     | .band => "_mm256_and_si256"
+     | .bor  => "_mm256_or_si256"
+     | .bxor => "_mm256_xor_si256"
+     | .bshl => "_mm256_slli_epi32"
+     | .bshr => "_mm256_srli_epi32"
+     | _ => "/* unsupported */"
+   ```
+3. Definir `vecStmtToC (config : VecConfig) (level : Nat) : VecStmt → String`:
+   - `scalar s` → `stmtToC level s`
+   - `vecMap lanes vars body` con config.target = "scalar" → for loop con stmtToC body
+   - `vecMap` con config.target = "neon" → emitir cuerpo con intrinsics NEON
+   - `vecMap` con config.target = "avx2" → emitir cuerpo con intrinsics AVX2
+   - `vecLoad dst base idx lanes` → `vld1q_s32` (NEON) o `_mm256_loadu_si256` (AVX2) o loop (scalar)
+   - `vecStore` → `vst1q_s32` o `_mm256_storeu_si256` o loop
+   - `vecSeq s1 s2` → `vecStmtToC s1 ++ "\n" ++ vecStmtToC s2`
+4. Smoke tests: butterfly body emitted as NEON, AVX2, y scalar.
+
+**LOC estimado**: ~300. **Riesgo**: Bajo (string emission, no proofs). **Tiempo**: 3-4 hrs.
+
+##### Worker N28.6: Rust Backend
+
+**Archivo a crear**: `TrustLean/Vec/RustBackend.lean`
+
+**Patrón**: Similar a CBackend pero con `std::arch::aarch64::*` (NEON) y `std::arch::x86_64::*` (AVX2).
+
+**LOC estimado**: ~250. **Riesgo**: Bajo. **Tiempo**: 3-4 hrs.
+
+---
+
+#### B46: Tests + Integration (N28.7 + N28.8 en paralelo)
+
+##### Worker N28.7: Smoke Tests
+
+**Archivo a crear**: `TrustLean/Vec/Tests.lean`
+
+**Tareas**:
+1. Definir butterfly body concreto como `Stmt`:
+   ```lean
+   def butterfly_body (p : Int) : Stmt :=
+     .seq (.assign (.user "tmp") (.binOp .mul (.varRef (.user "w")) (.varRef (.user "b"))))
+     (.seq (.assign (.user "sum") (.binOp .add (.varRef (.user "a")) (.varRef (.user "tmp"))))
+           (.assign (.user "diff") (.binOp .sub
+             (.binOp .add (.litInt p) (.varRef (.user "a"))) (.varRef (.user "tmp")))))
+   ```
+2. Test: `evalVecStmt` con `vecMap 4 ["a", "b", "w", "tmp", "sum", "diff"] butterfly_body` = 4 evaluaciones escalares
+3. Test: `vecLoad` + `vecMap` + `vecStore` end-to-end con 4 lanes
+4. Test: `vecStmtToC` emite C compilable para NEON, AVX2, scalar
+5. Non-vacuity: lifting theorem aplicado a butterfly concreto
+
+##### Worker N28.8: Integration
+
+**Archivo a crear**: `TrustLean/Vec.lean` (root import) + modificar `TrustLean.lean`
+
+**Tareas**:
+1. Crear `TrustLean/Vec.lean`:
+   ```lean
+   import TrustLean.Vec.Defs
+   import TrustLean.Vec.Eval
+   import TrustLean.Vec.LiftingTheorem
+   import TrustLean.Vec.FuelMono
+   import TrustLean.Vec.CBackend
+   import TrustLean.Vec.RustBackend
+   import TrustLean.Vec.Tests
+   ```
+2. Agregar `import TrustLean.Vec` a `TrustLean.lean`
+3. `lake build` completo
+4. Zero sorry audit
+
+---
+
+## Previous Versions
+
+### v4.1.0
 
 ### Fase 8: UInt128 Agreement — Goldilocks Formal Gap Closure
 

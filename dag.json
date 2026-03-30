@@ -504,5 +504,117 @@
         {"id": "B40", "name": "Integration + Audit", "nodes": ["N27.7"], "type": "SEQ", "status": "pending", "closed_at": null}
       ]
     }
+  ],
+  "phases_v42": [
+    {
+      "id": "fase11",
+      "name": "VecStmt — Verified SIMD Wrapper Layer",
+      "version": "v4.2.0",
+      "status": "pending",
+      "nodes": [
+        {
+          "id": "N28.1", "name": "VecStmt IR (VecStmt, VecConfig, VecType, selectLane, writeLane, writesTo)",
+          "type": "FUND", "status": "pending",
+          "files": ["TrustLean/Vec/Defs.lean"], "deps": [], "blocks": ["B41"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 4, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": ["verificacion/polubelova-haclxn-verified-generic-simd-crypto-2020-ccs.md"],
+            "lessons": ["L-313", "L-290"],
+            "libraries": ["TrustLean:Core/Value", "TrustLean:Core/Stmt"],
+            "notes": "VarName.array gives disjointness for free. Use List String for vars (not Finset) to avoid Mathlib import complexity."
+          }
+        },
+        {
+          "id": "N28.2", "name": "evalVecStmt (Nat.foldl per lane, delegates to evalStmt)",
+          "type": "CRIT", "status": "pending",
+          "files": ["TrustLean/Vec/Eval.lean"], "deps": ["N28.1"], "blocks": ["B42"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 2, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": [],
+            "lessons": ["L-657"],
+            "libraries": ["TrustLean:Core/Eval"],
+            "notes": "List.range produces Nat; convert to Int for VarName.array. Foldl over lanes with Option threading."
+          }
+        },
+        {
+          "id": "N28.3", "name": "Lifting Theorem (vecMap_lane_correct — lane independence)",
+          "type": "CRIT", "status": "pending",
+          "files": ["TrustLean/Vec/LiftingTheorem.lean"], "deps": ["N28.2"], "blocks": ["B43"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 3, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": ["verificacion/polubelova-haclxn-verified-generic-simd-crypto-2020-ccs.md"],
+            "lessons": ["L-657", "L-313"],
+            "libraries": ["TrustLean:Core/Foundation"],
+            "notes": "DE-RISK with _aux sketch. Key: evalStmt_preserves_array (body writing user vars doesn't touch array positions). Disjointness from VarName constructors."
+          }
+        },
+        {
+          "id": "N28.4", "name": "Fuel Monotonicity (evalVecStmt_fuel_mono_full)",
+          "type": "CRIT", "status": "pending",
+          "files": ["TrustLean/Vec/FuelMono.lean"], "deps": ["N28.2"], "blocks": ["B44"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 2, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": [],
+            "lessons": ["L-625"],
+            "libraries": ["TrustLean:Core/FuelMono"],
+            "notes": "5 cases: scalar delegates to evalStmt_fuel_mono_full. vecLoad/vecStore fuel-free. vecMap: foldl with evalStmt_fuel_mono per lane. vecSeq: standard seq IH."
+          }
+        },
+        {
+          "id": "N28.5", "name": "C Backend (NEON + AVX2 + scalar fallback)",
+          "type": "PAR", "status": "pending",
+          "files": ["TrustLean/Vec/CBackend.lean"], "deps": ["N28.2"], "blocks": ["B45"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 3, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": [],
+            "lessons": ["L-308"],
+            "libraries": ["TrustLean:Backend/CBackend"],
+            "notes": "Intrinsic tables: 8 BinOps × {neon, avx2}. vecLoad→vld1q/loadu, vecStore→vst1q/storeu. Scalar fallback = for loop."
+          }
+        },
+        {
+          "id": "N28.6", "name": "Rust Backend (std::arch intrinsics)",
+          "type": "PAR", "status": "pending",
+          "files": ["TrustLean/Vec/RustBackend.lean"], "deps": ["N28.2"], "blocks": ["B45"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 1, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {
+            "papers": [],
+            "lessons": ["L-308"],
+            "libraries": ["TrustLean:Backend/RustBackend"],
+            "notes": "Mirror CBackend but with std::arch::aarch64/x86_64 namespaces. unsafe blocks required."
+          }
+        },
+        {
+          "id": "N28.7", "name": "Smoke tests + Non-vacuity (butterfly vecMap = 4x scalar)",
+          "type": "HOJA", "status": "pending",
+          "files": ["TrustLean/Vec/Tests.lean"], "deps": ["N28.3", "N28.4", "N28.5"], "blocks": ["B46"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 1, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {"papers": [], "lessons": [], "libraries": [], "notes": "Concrete butterfly body via vecMap 4. End-to-end with vecStmtToC emission."}
+        },
+        {
+          "id": "N28.8", "name": "Integration + Zero Sorry Audit",
+          "type": "HOJA", "status": "pending",
+          "files": ["TrustLean/Vec.lean"], "deps": ["N28.7"], "blocks": ["B46"],
+          "metrics": {"loc": 0, "theorems": 0, "lemmas": 0, "defs": 0, "sorry": 0},
+          "properties": {"total": 2, "passing": 0, "failing": 0, "not_runnable": 0},
+          "study": {"papers": [], "lessons": [], "libraries": [], "notes": "Add imports to TrustLean.lean. lake build. Zero sorry."}
+        }
+      ],
+      "blocks": [
+        {"id": "B41", "name": "VecStmt IR + Helpers", "nodes": ["N28.1"], "type": "SEQ", "status": "pending", "closed_at": null},
+        {"id": "B42", "name": "evalVecStmt", "nodes": ["N28.2"], "type": "SEQ", "status": "pending", "closed_at": null},
+        {"id": "B43", "name": "Lifting Theorem (de-risk)", "nodes": ["N28.3"], "type": "SEQ", "status": "pending", "closed_at": null},
+        {"id": "B44", "name": "Fuel Monotonicity", "nodes": ["N28.4"], "type": "SEQ", "status": "pending", "closed_at": null},
+        {"id": "B45", "name": "C + Rust Backends", "nodes": ["N28.5", "N28.6"], "type": "AGENT_TEAM", "status": "pending", "closed_at": null},
+        {"id": "B46", "name": "Tests + Integration", "nodes": ["N28.7", "N28.8"], "type": "AGENT_TEAM", "status": "pending", "closed_at": null}
+      ]
+    }
   ]
 }

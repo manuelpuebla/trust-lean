@@ -7,3 +7,4 @@ import TrustLean.Bridge
 import TrustLean.Tests.Integration
 import TrustLean.Tests.BridgeIntegration
 import TrustLean.MicroC
+import TrustLean.Vec
