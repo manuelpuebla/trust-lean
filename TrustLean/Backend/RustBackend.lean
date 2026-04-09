@@ -67,6 +67,7 @@ def exprToRust : LowLevelExpr → String
     "(" ++ exprToRust lhs ++ " " ++ binOpToRust op ++ " " ++ exprToRust rhs ++ ")"
   | .unaryOp op e => "(" ++ unaryOpToRust op ++ exprToRust e ++ ")"
   | .powCall base n => "power(" ++ exprToRust base ++ ", " ++ toString n ++ ")"
+  | .addrOf v => "&" ++ varNameToStr v
 
 /-! ## Statement Emission -/
 

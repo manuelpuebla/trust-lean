@@ -77,6 +77,7 @@ def exprToC : LowLevelExpr → String
     "(" ++ exprToC lhs ++ " " ++ binOpToC op ++ " " ++ exprToC rhs ++ ")"
   | .unaryOp op e => "(" ++ unaryOpToC op ++ exprToC e ++ ")"
   | .powCall base n => "power(" ++ exprToC base ++ ", " ++ toString n ++ ")"
+  | .addrOf v => "&" ++ varNameToC v
 
 /-! ## Statement Emission -/
 

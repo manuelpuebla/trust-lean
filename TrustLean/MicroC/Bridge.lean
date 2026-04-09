@@ -107,6 +107,9 @@ theorem exprToMicroC_bridge (env : LowLevelEnv) (mcEnv : MicroCEnv)
     | some v => cases v with
       | int _ => rfl
       | bool _ => rfl
+  | addrOf v =>
+    simp only [evalExpr_addrOf, exprToMicroC_addrOf, evalMicroCExpr_varRef]
+    exact congrArg some (hb v)
 
 /-! ## Array Name Bridge -/
 

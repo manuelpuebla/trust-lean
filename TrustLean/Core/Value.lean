@@ -215,6 +215,7 @@ inductive LowLevelExpr where
   | binOp    : BinOp → LowLevelExpr → LowLevelExpr → LowLevelExpr
   | unaryOp  : UnaryOp → LowLevelExpr → LowLevelExpr
   | powCall  : LowLevelExpr → Nat → LowLevelExpr
+  | addrOf   : VarName → LowLevelExpr               -- address-of for C/Rust & emission
   deriving Repr, Inhabited
 
 /-! ## Environment -/

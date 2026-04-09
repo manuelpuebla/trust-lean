@@ -56,6 +56,7 @@ def evalExpr (env : LowLevelEnv) : LowLevelExpr → Option Value
     match evalExpr env base with
     | some (.int i) => some (.int (i ^ n))
     | _ => none
+  | .addrOf v => some (env v)   -- for eval, addrOf behaves like varRef; & is backend-only
 
 @[simp] theorem evalExpr_litInt (env : LowLevelEnv) (n : Int) :
     evalExpr env (.litInt n) = some (.int n) := rfl
@@ -84,6 +85,9 @@ def evalExpr (env : LowLevelEnv) : LowLevelExpr → Option Value
       match evalExpr env base with
       | some (.int i) => some (.int (i ^ n))
       | _ => none := rfl
+
+@[simp] theorem evalExpr_addrOf (env : LowLevelEnv) (v : VarName) :
+    evalExpr env (.addrOf v) = some (env v) := rfl
 
 /-! ## Statement Evaluator -/
 

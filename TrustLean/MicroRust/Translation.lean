@@ -25,6 +25,7 @@ def exprToMicroRust : LowLevelExpr → MicroRustExpr
   | .binOp op e1 e2 => .binOp (binOpToMicroRust op) (exprToMicroRust e1) (exprToMicroRust e2)
   | .unaryOp op e => .unaryOp (unaryOpToMicroRust op) (exprToMicroRust e)
   | .powCall base n => .powCall (exprToMicroRust base) n
+  | .addrOf v => .varRef (varNameToRust v)   -- addrOf maps to varRef for MicroRust (& is backend-only)
 
 /-! ## exprToMicroRust @[simp] Equation Lemmas -/
 
@@ -47,6 +48,9 @@ def exprToMicroRust : LowLevelExpr → MicroRustExpr
 
 @[simp] theorem exprToMicroRust_powCall (base : LowLevelExpr) (n : Nat) :
     exprToMicroRust (.powCall base n) = .powCall (exprToMicroRust base) n := rfl
+
+@[simp] theorem exprToMicroRust_addrOf (v : VarName) :
+    exprToMicroRust (.addrOf v) = .varRef (varNameToRust v) := rfl
 
 /-! ## Statement Translation -/
 

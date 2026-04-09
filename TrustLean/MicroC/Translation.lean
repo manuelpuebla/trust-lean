@@ -32,6 +32,7 @@ def exprToMicroC : LowLevelExpr → MicroCExpr
   | .binOp op e1 e2 => .binOp (binOpToMicroC op) (exprToMicroC e1) (exprToMicroC e2)
   | .unaryOp op e => .unaryOp (unaryOpToMicroC op) (exprToMicroC e)
   | .powCall base n => .powCall (exprToMicroC base) n
+  | .addrOf v => .varRef (varNameToC v)   -- addrOf maps to varRef for MicroC (& is backend-only)
 
 /-! ## exprToMicroC @[simp] Equation Lemmas -/
 
@@ -54,6 +55,9 @@ def exprToMicroC : LowLevelExpr → MicroCExpr
 
 @[simp] theorem exprToMicroC_powCall (base : LowLevelExpr) (n : Nat) :
     exprToMicroC (.powCall base n) = .powCall (exprToMicroC base) n := rfl
+
+@[simp] theorem exprToMicroC_addrOf (v : VarName) :
+    exprToMicroC (.addrOf v) = .varRef (varNameToC v) := rfl
 
 /-! ## Statement Translation -/
 

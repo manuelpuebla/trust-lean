@@ -81,6 +81,7 @@ private theorem wf_base_is_user_rust (base : LowLevelExpr) (name : String)
   | binOp _ _ _ => exact absurd hwf id
   | unaryOp _ _ => exact absurd hwf id
   | powCall _ _ => exact absurd hwf id
+  | addrOf _ => exact absurd hwf id
 
 /-- Bridge preservation for array updates: updating .array name i in Core
     corresponds to updating (name ++ "[" ++ toString i ++ "]") in MicroRust. -/

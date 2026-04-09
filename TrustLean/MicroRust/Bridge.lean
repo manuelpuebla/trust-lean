@@ -99,6 +99,9 @@ theorem exprToMicroRust_bridge (env : LowLevelEnv) (mcEnv : MicroRustEnv)
     | some v => cases v with
       | int _ => rfl
       | bool _ => rfl
+  | addrOf v =>
+    simp only [evalExpr_addrOf, exprToMicroRust_addrOf, evalMicroCExpr_varRef]
+    exact congrArg some (hb v)
 
 /-! ## Array Name Bridge -/
 
