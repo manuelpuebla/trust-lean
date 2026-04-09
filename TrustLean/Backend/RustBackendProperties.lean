@@ -202,8 +202,16 @@ example : countChar '{'
 /-! ## N22.4: Rust-Specific Properties (P0) -/
 
 /-- Rust uses postfix "as" for casting (vs C's prefix cast). -/
-@[simp] theorem unaryOpToRust_widen : unaryOpToRust .widen32to64 = "(as i64)" := rfl
-@[simp] theorem unaryOpToRust_trunc : unaryOpToRust .trunc64to32 = "(as i32)" := rfl
+@[simp] theorem unaryOpToRust_widen : unaryOpToRust .widen32to64 = " as i64" := rfl
+@[simp] theorem unaryOpToRust_trunc : unaryOpToRust .trunc64to32 = " as i32" := rfl
+
+/-- exprToRust emits widen32to64 as Rust postfix cast syntax. -/
+@[simp] theorem exprToRust_widen (e : LowLevelExpr) :
+    exprToRust (.unaryOp .widen32to64 e) = "(" ++ exprToRust e ++ " as i64)" := rfl
+
+/-- exprToRust emits trunc64to32 as Rust postfix cast syntax. -/
+@[simp] theorem exprToRust_trunc (e : LowLevelExpr) :
+    exprToRust (.unaryOp .trunc64to32 e) = "(" ++ exprToRust e ++ " as i32)" := rfl
 
 /-- Rust ite emits "if " followed by condition (no parentheses, unlike C's "if (cond)").
     Proved by definitional equality — the emission template starts with "if ". -/
