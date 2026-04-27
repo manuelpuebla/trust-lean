@@ -79,7 +79,7 @@ def avx2Store : String := "_mm256_storeu_si256"
 /-- Emit C code for a VecSpecialOp. Handles NEON, AVX2, and scalar fallback.
     NOTE: AVX2 mulHigh uses emulation (no _mm256_mulhi_epi32 for 32-bit). -/
 private def indentC (level : Nat) : String :=
-  String.mk (List.replicate (level * 2) ' ')
+  String.ofList (List.replicate (level * 2) ' ')
 
 def vecSpecialOpToC (config : VecConfig) (level : Nat) (dst src1 src2 : String)
     : VecSpecialOp → String
@@ -129,10 +129,10 @@ def vecSpecialOpToC (config : VecConfig) (level : Nat) (dst src1 src2 : String)
 
 /-- Indentation helper. -/
 private def indent (level : Nat) : String :=
-  String.mk (List.replicate (level * 2) ' ')
+  String.ofList (List.replicate (level * 2) ' ')
 
 /-- Emit a scalar for loop as fallback for vecMap. -/
-private def emitScalarLoop (level : Nat) (lanes : Nat) (vars : List String)
+private def emitScalarLoop (level : Nat) (lanes : Nat) (_ : List String)
     (bodyC : String) : String :=
   let ind := indent level
   ind ++ "for (int _lane = 0; _lane < " ++ toString lanes ++ "; _lane++) {\n" ++
@@ -149,8 +149,6 @@ def vecStmtToC (config : VecConfig) (level : Nat) : VecStmt → String
     else
       -- For NEON/AVX2, emit the scalar body as a comment + intrinsic version
       let ind := indent level
-      let vecType := if config.target == "neon" then neonVecType config.vecType
-                     else avx2VecType config.vecType
       ind ++ "/* vecMap " ++ toString lanes ++ " lanes (" ++ config.target ++ ") */\n" ++
       ind ++ "/* Scalar body: " ++ stmtToC 0 body ++ " */\n" ++
       ind ++ "/* SIMD intrinsics emitted by target backend */\n"

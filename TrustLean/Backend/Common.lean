@@ -404,7 +404,7 @@ private theorem sanitizeIdentifierRust_allValid (s : String) :
   have h := sanitizeIdentifierRust_valid s
   unfold isValidRustIdent isValidCIdent at h
   cases hlist : (sanitizeIdentifierRust s).toList with
-  | nil => simp [List.all_eq_true]
+  | nil => simp
   | cons c cs =>
     rw [hlist] at h; simp only [Bool.and_eq_true] at h; exact h.2
 
@@ -476,7 +476,7 @@ theorem sanitizeIdentifierRust_idempotent (s : String) :
       apply Bool.eq_false_iff.mpr; intro h
       have hmem := List.contains_iff_mem.mp h
       rw [heq_r] at hmem; exact hnotres hmem
-    simp only [hnotdigit, hnotresOL, ite_false]
+    simp only [hnotdigit, hnotresOL]
     exact heq_r
 
 end TrustLean

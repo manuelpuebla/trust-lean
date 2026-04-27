@@ -93,7 +93,7 @@ def T5_while_break : IO Bool := do
     Sum odd numbers from 9 down to 1 using continue to skip evens.
     Result: sum = 9+7+5+3+1 = 25 -/
 def T6_while_continue : IO Bool := do
-  let env := mkEnv [(.user "i", .int 10), (.user "sum", .int 0)]
+  let _env := mkEnv [(.user "i", .int 10), (.user "sum", .int 0)]
   -- while i > 0 do
   --   i := i - 1
   --   if i % 2 == 0 then continue

@@ -144,7 +144,7 @@ private theorem evalMicroC_uint32_fuel_mono_gen (stmt : MicroCStmt) :
     oc ≠ .outOfFuel →
     evalMicroC_uint32 fuel' env stmt = some (oc, env') := by
   induction stmt with
-  | skip => intro _ _ _ _ _ h _ _; simp_all [evalMicroC_uint32]
+  | skip => intro _ _ _ _ _ h _ _; simp_all
   | break_ => intro _ _ _ _ _ h _ _; simp_all [evalMicroC_uint32]
   | continue_ => intro _ _ _ _ _ h _ _; simp_all [evalMicroC_uint32]
   | return_ re =>
@@ -330,7 +330,7 @@ private theorem evalMicroC_uint64_fuel_mono_gen (stmt : MicroCStmt) :
     oc ≠ .outOfFuel →
     evalMicroC_uint64 fuel' env stmt = some (oc, env') := by
   induction stmt with
-  | skip => intro _ _ _ _ _ h _ _; simp_all [evalMicroC_uint64]
+  | skip => intro _ _ _ _ _ h _ _; simp_all
   | break_ => intro _ _ _ _ _ h _ _; simp_all [evalMicroC_uint64]
   | continue_ => intro _ _ _ _ _ h _ _; simp_all [evalMicroC_uint64]
   | return_ re =>

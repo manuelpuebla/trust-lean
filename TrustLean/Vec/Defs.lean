@@ -188,7 +188,7 @@ example : selectLane 2 ["a"] LowLevelEnv.default (.user "z") =
 example : let laneEnv : LowLevelEnv := fun v => match v with
             | .user "x" => .int 42 | _ => .int 0
           writeLane 1 ["x"] laneEnv LowLevelEnv.default (.array "x" 1) = .int 42 := by
-  simp [writeLane, LowLevelEnv.default]
+  simp [writeLane]
 
 -- writeLane doesn't affect other lanes
 example : let laneEnv : LowLevelEnv := fun v => match v with

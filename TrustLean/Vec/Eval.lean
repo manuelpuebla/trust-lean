@@ -72,11 +72,11 @@ def evalVecStmt (fuel : Nat) (env : LowLevelEnv) : VecStmt â†’ Option (Outcome Ã
 
 /-- Scalar passthrough: evalVecStmt on scalar skip = normal -/
 example : evalVecStmt 10 LowLevelEnv.default (.scalar .skip) =
-    some (.normal, LowLevelEnv.default) := by simp [evalVecStmt, evalStmt]
+    some (.normal, LowLevelEnv.default) := by simp [evalVecStmt]
 
 /-- vecMap with 0 lanes is a no-op -/
 example : evalVecStmt 10 LowLevelEnv.default (.vecMap 0 ["x"] (.assign (.user "x") (.litInt 42))) =
     some (.normal, LowLevelEnv.default) := by
-  simp [evalVecStmt, List.range, List.range.loop, List.foldl]
+  simp [evalVecStmt, List.range, List.range.loop]
 
 end TrustLean

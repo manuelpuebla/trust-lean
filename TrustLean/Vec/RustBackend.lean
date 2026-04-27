@@ -54,13 +54,13 @@ def rustVecType (config : VecConfig) : String :=
 /-! ## VecStmt → Rust Code Generation -/
 
 private def rustIndent (level : Nat) : String :=
-  String.mk (List.replicate (level * 4) ' ')
+  String.ofList (List.replicate (level * 4) ' ')
 
 /-- Generate Rust code from a VecStmt.
     Outside TCB — produces String, no proof obligations. -/
 def vecStmtToRust (config : VecConfig) (level : Nat) : VecStmt → String
   | .scalar s => stmtToRust level s
-  | .vecMap lanes vars body =>
+  | .vecMap lanes _ body =>
     let ind := rustIndent level
     if config.target == "scalar" then
       ind ++ "for _lane in 0.." ++ toString lanes ++ " {\n" ++
