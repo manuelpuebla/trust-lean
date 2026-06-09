@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        uses: leanprover/lean-action@v1
+        with:
+          # The lean_extensions axiom guard is wired into the lakefile and is
+          # active during `lake build`. It currently emits warnings for
+          # pre-existing `native_decide` proofs (Lean.ofReduceBool,
+          # Lean.trustCompiler), so CI runs a plain `lake build` rather than
+          # `lake build --wfail`. Once those warnings are resolved, set
+          # `build-args: "--wfail"` here to enforce the axiom guard in CI.
+          build: "true"
+          test: "false"
+          lint: "false"
