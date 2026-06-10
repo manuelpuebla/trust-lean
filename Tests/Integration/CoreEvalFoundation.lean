@@ -93,23 +93,7 @@ def T5_while_break : IO Bool := do
     Sum odd numbers from 9 down to 1 using continue to skip evens.
     Result: sum = 9+7+5+3+1 = 25 -/
 def T6_while_continue : IO Bool := do
-  let _env := mkEnv [(.user "i", .int 10), (.user "sum", .int 0)]
-  -- while i > 0 do
-  --   i := i - 1
-  --   if i % 2 == 0 then continue
-  --   sum := sum + i
-  -- Note: no mod in IR, we use a different approach:
-  -- Check if (i / 2) * 2 == i (even check via ltOp comparison)
-  -- Actually, since there's no mod or div, let's just decrement and check via a more direct method.
-  -- We'll use a different strategy: count down and use eqOp to check specific values.
-  -- Simpler approach: manually sum odd numbers using nested logic.
-
-  -- Actually, let's just test continue with a simpler pattern:
-  -- while i > 0 do i := i - 1; if i == 8 then continue; if i == 6 then continue; ...
-  -- This is too complex without mod. Let's simplify the test:
-
-  -- Simpler continue test: count from 5 to 0, skip the decrement of sum when i=3
-  let env2 := mkEnv [(.user "i", .int 5), (.user "count", .int 0)]
+  let env := mkEnv [(.user "i", .int 5), (.user "count", .int 0)]
   -- while i > 0 do
   --   i := i - 1
   --   if i == 2 then continue   -- skip counting when i becomes 2
@@ -124,7 +108,7 @@ def T6_while_continue : IO Bool := do
         Stmt.skip)
       (Stmt.assign (.user "count") (.binOp .add (.varRef (.user "count")) (.litInt 1))))
   let stmt := Stmt.while cond body
-  match evalStmt 200 env2 stmt with
+  match evalStmt 200 env stmt with
   | some (.normal, env') =>
     -- i goes: 5->4->3->2(skip)->1->0, count increments at 4,3,1,0 = 4 times
     reportTest "T6_while_continue" (env' (.user "count") == .int 4)
