@@ -120,7 +120,7 @@ example :
     | some (.normal, env') => env' (.array "out" 0) = .int 101
     | _ => True := by
   simp [evalVecStmt, List.range, List.range.loop, List.foldl, evalOneLane,
-        selectLane, evalStmt, evalExpr, evalBinOp, writeLane, LowLevelEnv.update, testBody]
+        evalExpr, evalBinOp, writeLane, LowLevelEnv.update, testBody]
 
 /-- Non-vacuity: vecMap 2 processes both lanes independently. Lane 0 gets 101, lane 1 gets 201. -/
 example :
@@ -133,7 +133,7 @@ example :
       env' (.array "out" 0) = .int 101 ∧ env' (.array "out" 1) = .int 201
     | _ => True := by
   simp only [evalVecStmt, List.range, List.range.loop, List.foldl, evalOneLane, selectLane,
-        evalStmt, evalExpr, evalBinOp, writeLane, LowLevelEnv.update, testBody]
+        evalStmt, evalExpr, testBody]
   constructor <;> rfl
 
 end TrustLean

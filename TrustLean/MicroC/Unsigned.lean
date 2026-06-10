@@ -73,8 +73,7 @@ theorem wrapWidth_of_inRange (w : Nat) (x : Int) (h0 : 0 ≤ x) (h1 : x < 2 ^ w)
 /-- wrapWidth distributes over addition. -/
 theorem wrapWidth_add (w : Nat) (a b : Int) :
     wrapWidth w (wrapWidth w a + wrapWidth w b) = wrapWidth w (a + b) := by
-  simp [wrapWidth, Int.add_mul_emod_self_left, Int.add_mul_emod_self_right,
-        Int.emod_emod_of_dvd, Int.add_emod]
+  simp [wrapWidth, Int.emod_emod_of_dvd, Int.add_emod]
 
 /-- wrapWidth distributes over subtraction. -/
 theorem wrapWidth_sub (w : Nat) (a b : Int) :

@@ -96,7 +96,7 @@ example (n : Int) : evalUnaryOp .lnot (.int n) = none := by rfl
 /-! ## P6 — P1 IDEMPOTENCY: Applying neg or lnot twice is identity -/
 -- P1, IDEMPOTENCY: neg is an involution on Ints
 example (n : Int) : (evalUnaryOp .neg (.int n)) >>= (evalUnaryOp .neg) = some (.int n) := by
-  simp [evalUnaryOp, Int.neg_neg]
+  simp [evalUnaryOp]
 
 -- P1, IDEMPOTENCY: lnot is an involution on Bools
 example (b : Bool) : (evalUnaryOp .lnot (.bool b)) >>= (evalUnaryOp .lnot) = some (.bool b) := by

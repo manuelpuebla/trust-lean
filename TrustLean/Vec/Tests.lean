@@ -41,7 +41,7 @@ example :
       env' (.array "diff" 1) = .int 0
     | _ => False := by
   simp only [evalVecStmt, List.range, List.range.loop, List.foldl, evalOneLane, selectLane,
-        evalStmt, evalExpr, evalBinOp, writeLane, LowLevelEnv.update,
+        evalStmt, evalExpr, evalBinOp,
         simpleButterflyBody, butterflyVars]
   exact ⟨rfl, rfl, rfl, rfl⟩
 
@@ -63,7 +63,7 @@ example :
       env' (.array "data" 1) = .int 201
     | _ => False := by
   simp only [evalVecStmt, List.range, List.range.loop, List.foldl, evalOneLane, selectLane,
-        evalStmt, evalExpr, evalBinOp, writeLane, LowLevelEnv.update]
+        evalStmt, evalExpr, evalBinOp, LowLevelEnv.update]
   exact ⟨rfl, rfl⟩
 
 /-! ## Test 3: Backend emission produces strings -/

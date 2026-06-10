@@ -145,7 +145,7 @@ private theorem evalMicroC_uint128_fuel_mono_gen (stmt : MicroCStmt) :
     oc ≠ .outOfFuel →
     evalMicroC_uint128 fuel' env stmt = some (oc, env') := by
   induction stmt with
-  | skip => intro _ _ _ _ _ h _ _; simp_all [evalMicroC_uint128]
+  | skip => intro _ _ _ _ _ h _ _; simp_all
   | break_ => intro _ _ _ _ _ h _ _; simp_all [evalMicroC_uint128]
   | continue_ => intro _ _ _ _ _ h _ _; simp_all [evalMicroC_uint128]
   | return_ re =>
