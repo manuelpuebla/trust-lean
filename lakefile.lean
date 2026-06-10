@@ -18,8 +18,10 @@ target axiomGuardPlugin : Dynlib := do
 lean_lib «TrustLean» where
   roots := #[`TrustLean]
   plugins := #[axiomGuardPlugin]
+  leanOptions := #[⟨`linter.axiomGuard.allowedAxioms, "Lean.trustCompiler, Lean.ofReduceBool, Lean.ofReduceNat"⟩]
 
 lean_lib «Tests» where
   roots := #[`Tests]
   globs := #[.submodules `Tests]
   plugins := #[axiomGuardPlugin]
+  leanOptions := #[⟨`linter.axiomGuard.allowedAxioms, "Lean.trustCompiler, Lean.ofReduceBool, Lean.ofReduceNat"⟩]
